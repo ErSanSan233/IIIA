@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI参与指数 | IIIA标准化组织</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown.min.css">
+    <style>
+        .markdown-body {
+        background: #f8fafc !important;
+        color: #1e293b !important;
+        }
+        .markdown-body table {
+        background: #f8fafc !important;
+        }
+        .markdown-body th, .markdown-body td {
+        background: #f8fafc !important;
+        color: #1e293b !important;
+        }
+        .markdown-body thead {
+        background: #f8fafc !important;
+        }
+        .markdown-body tr:nth-child(2n) {
+        background: #f8fafc !important;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --primary-dark: #3730a3;
+            --secondary: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --border: #e2e8f0;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: white;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+        }
+        
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+            padding-bottom: 5px;
+            font-size: 17px;
+        }
+        
+        nav a:hover {
+            color: var(--primary);
+        }
+        
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--primary);
+            transition: var(--transition);
+            border-radius: 2px;
+        }
+        
+        nav a:hover::after {
+            width: 100%;
+        }
+        
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="100%" height="100%" fill="white" opacity="0.05"/><path d="M0,0 L200,200 M200,0 L0,200" stroke="%234f46e5" stroke-width="0.5" opacity="0.1"/></svg>');
+            z-index: -1;
+        }
+        
+        .hero h1 {
+            font-size: 3.8rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            line-height: 1.2;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 0 auto 40px;
+            color: var(--dark);
+            opacity: 0.9;
+        }
+        
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 16px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+            border: none;
+            cursor: pointer;
+        }
+        
+        .cta-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .section {
+            padding: 100px 0;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 60px;
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            padding: 30px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+        
+        .card-title {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .card-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .card-content {
+            padding: 30px;
+        }
+        
+        .card-content ul {
+            list-style: none;
+        }
+        
+        .card-content li {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            font-size: 1.05rem;
+            white-space: nowrap;
+        }
+        
+        .card-content li:last-child {
+            border-bottom: none;
+        }
+        
+        .card-content li::before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .chat-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-top: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .chat-header {
+            padding: 20px 30px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+        }
+        
+        .chat-icon {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .chat-container {
+            padding: 30px;
+            min-height: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            background: rgba(248, 250, 252, 0.6);
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 18px 24px;
+            border-radius: 18px;
+            line-height: 1.6;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .ai-message {
+            background: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+        
+        .user-message {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            gap: 12px;
+            background: white;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 16px 24px;
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+            background: #f8fafc;
+        }
+        
+        .input-area input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .input-area button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .input-area button:hover {
+            background: var(--primary-dark);
+        }
+        
+        .input-area button:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 50px;
+            margin-top: 60px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .result-title {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            color: var(--primary);
+        }
+        
+        .result-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 50px;
+            align-items: center;
+        }
+        
+        .result-icon-container {
+            width: 420px;
+            height: 420px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+        }
+        
+        .result-icon {
+            width: 380px;
+            height: 380px;
+            object-fit: contain;
+        }
+        
+        .result-details {
+            text-align: left;
+            max-width: 500px;
+        }
+        
+        .result-index {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .result-description {
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            line-height: 1.7;
+            color: var(--dark);
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .action-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+            font-size: 1.05rem;
+        }
+        
+        .action-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 70px 0 30px;
+            margin-top: 80px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-column h3 {
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 12px;
+        }
+        
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-light);
+            border-radius: 2px;
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column li {
+            margin-bottom: 15px;
+        }
+        
+        .footer-column a {
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .footer-column a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(79, 70, 229, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            align-self: flex-start;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--gray);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2.2rem;
+            }
+            
+            .result-content {
+                flex-direction: column;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .result-section {
+                padding: 30px;
+            }
+            
+            .result-content {
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">IIIA</div>
+                    <div class="logo-text">AI参与指数</div>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#about">关于标准</a></li>
+                        <li><a href="#levels">等级说明</a></li>
+                        <li><a href="#chat">指数评估</a></li>
+                        <li><a href="#resources">资源下载</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>透明化AI创作，建立信任新标准</h1>
+            <p>IIIA标准化组织提供AI参与指数评估，帮助视频创作者清晰标注AI参与程度，让观众了解创作过程</p>
+            <a href="#chat" class="cta-button">开始评估我的视频 <i class="fas fa-arrow-right"></i></a>
+        </div>
+    </section>
+
+    <section id="about" class="section">
+        <div class="container">
+            <h2 class="section-title">关于AI参与指数</h2>
+            <div class="about-content">
+                <p style="text-align: left; max-width: 900px; margin: 0 auto 30px; font-size: 1.5rem; line-height: 2.5;">
+                    AI参与指数（Indice d'implication de l'intelligence artificielle，IIIA）是一套由开源社区 IIIA 标准化组织制定的详细等级标准，
+                    <strong>旨在帮助视频创作者、观众以及相关行业人员清晰地界定和理解视频在制作过程中AI参与的程度。</strong>
+                    <br/>
+                    该标准将AI参与分为0-5级，并包含AI主题标识(*)，为数字内容创作透明度设立了新标杆。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="levels" class="section">
+        <div class="container">
+            <h2 class="section-title">等级说明</h2>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">等级 0 & 1</div>
+                        <div class="card-subtitle">未经AI制作</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li><strong>0级</strong>：完全未使用AI</li>
+                            <li><strong>1级</strong>：AI仅提供参考，并未参与视频制作</li>
+                            <li>核心内容和视频制作完全由人类完成</li>
+                            <li>无AI直接参与创作过程</li>
+                            <li>AI仅作为工具提供灵感参考</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" style="background: #0ea5e9;">
+                        <div class="card-title">等级 2, 3 & 4</div>
+                        <div class="card-subtitle">AI参与制作</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li><strong>2级</strong>：人类主导，AI用于提升效果</li>
+                            <li><strong>3级</strong>：人类审核和筛查过视频全部内容</li>
+                            <li><strong>4级</strong>：存在未经人类审核的内容</li>
+                            <li>AI参与程度逐步增加</li>
+                            <li>人类在创作过程中仍保持主导或监督角色</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" style="background: #8b5cf6;">
+                        <div class="card-title">等级 5 & 主题</div>
+                        <div class="card-subtitle">由AI制作</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li><strong>5级</strong>：完全由AI制作</li>
+                            <li><strong>AI主题</strong>：视频内容围绕AI技术展开</li>
+                            <li>AI主导整个创作过程</li>
+                            <li>人类仅进行上传发布操作</li>
+                            <li>AI主题视频在等级后添加星号(*)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="chat" class="section">
+        <div class="container">
+            <h2 class="section-title">评估您的AI参与指数</h2>
+            <p style="text-align: center; margin-bottom: 20px; font-size: 1.1rem;">与我们的AI助手对话，确定您视频的AI参与指数</p>
+            
+            <div class="chat-section">
+                <div class="chat-header">
+                    <div class="chat-icon">IIIA-AI</div>
+                    <div>AI参与指数助手</div>
+                </div>
+                <div id="chat-container" class="chat-container">
+                    <!-- 对话内容将通过JS动态添加 -->
+                </div>
+                <div class="input-area">
+                    <input type="text" id="user-input" placeholder="输入您的回复..." autocomplete="off">
+                    <button id="send-btn" disabled>
+                        <span id="send-text">发送</span>
+                        <span id="loading-indicator" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="result-section" class="result-section">
+                <h3 class="result-title">您的视频AI参与指数</h3>
+                <div class="result-content">
+                    <div class="result-icon-container">
+                        <img id="result-icon" class="result-icon" src="" alt="AI参与指数图标">
+                    </div>
+                    <div class="result-details">
+                        <div class="result-index" id="result-index"></div>
+                        <div class="result-description" id="result-description"></div>
+                        <p style="margin-bottom: 20px; font-weight: 500; font-size: 1.1rem;">图标可直接 <strong>复制/下载</strong> 使用：</p>
+                        <div class="result-actions">
+                            <button class="action-button" id="copy-icon">
+                                <i class="far fa-copy"></i>
+                                复制图标
+                            </button>
+                            <button class="action-button" id="download-icon">
+                                <i class="fas fa-download"></i>
+                                下载图标
+                            </button>
+                            <button class="action-button" id="copy-index">
+                                <i class="far fa-copy"></i>
+                                复制指数
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="resources" class="section">
+        <div class="container">
+            <h2 class="section-title">资源与文档</h2>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header" style="background: #10b981;">
+                        <div class="card-title">标准文档</div>
+                        <!-- <div class="card-subtitle">详细等级标准说明</div> -->
+                    </div>
+                    <div class="card-content">
+                        <div id="README.md" class="markdown-body"></div>
+                    </div>
+                </div>
+                <!-- <div class="card">
+                    <div class="card-header" style="background: #10b981;">
+                        <div class="card-title">标准文档</div>
+                        <div class="card-subtitle">详细等级标准说明</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li>完整等级判定标准</li>
+                            <li>各等级详细说明</li>
+                            <li>使用指南与最佳实践</li>
+                            <li>案例分析与示例</li>
+                            <li>PDF格式下载</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" style="background: #f59e0b;">
+                        <div class="card-title">图标资源</div>
+                        <div class="card-subtitle">所有等级图标下载</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li>等级0-5标准图标</li>
+                            <li>AI主题(*级)图标</li>
+                            <li>多种格式(PNG, SVG)</li>
+                            <li>不同尺寸选择</li>
+                            <li>设计源文件(PXD)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" style="background: #ef4444;">
+                        <div class="card-title">贡献指南</div>
+                        <div class="card-subtitle">参与标准完善</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li>如何提交建议</li>
+                            <li>问题反馈流程</li>
+                            <li>贡献者协议</li>
+                            <li>社区讨论论坛</li>
+                            <li>版本更新日志</li>
+                        </ul>
+                    </div>
+                </div> -->
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <!-- <div class="footer-column">
+                    <h3>AI参与指数</h3>
+                    <ul>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 关于我们</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 标准文档</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 图标资源</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 贡献指南</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>支持</h3>
+                    <ul>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 常见问题</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 使用教程</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 联系我们</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 反馈建议</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>法律</h3>
+                    <ul>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 使用条款</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 隐私政策</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 许可协议</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> 版权声明</a></li>
+                    </ul>
+                </div> -->
+                
+                <div class="footer-column">
+                    <h3>加入社区</h3>
+                    <ul>
+                        <li><a href="https://github.com/ErSanSan233/IIIA"><i class="fab fa-github"></i> GitHub</a></li>
+                        <!-- <li><a href="#"><i class="fab fa-twitter"></i> Twitter</a></li> -->
+                        <!-- <li><a href="#"><i class="fab fa-discord"></i> Discord</a></li> -->
+                        <!-- <li><a href="#"><i class="fab fa-youtube"></i> YouTube</a></li> -->
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright">
+                © 2025 AI参与指数(IIIA)标准化组织 | MIT许可证 | 让AI创作更加透明可信
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        fetch('https://raw.githubusercontent.com/ErSanSan233/IIIA/main/README.md')
+        .then(res => res.text())
+        .then(md => {
+            const html = marked.parse(md);
+            document.getElementById('README.md').innerHTML = html;
+        });
+
+        
+        // 图标资源
+        const iconBaseURLs = {
+            "0": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B80.png",
+            "1": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B81.png",
+            "2": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B82.png",
+            "3": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B83.png",
+            "4": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B84.png",
+            "5": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B85.png",
+            "0*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B80*.png",
+            "1*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B81*.png",
+            "2*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B82*.png",
+            "3*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B83*.png",
+            "4*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B84*.png",
+            "5*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B85*.png"
+        };
+
+        // 系统提示词
+        const systemPrompt = `助手是由 IIIA(Indice d'implication de l'intelligence artificielle)AI参与指数标准化组织创建的IIIA-AI。
+IIIA-AI 喜欢帮助视频创作者选择他创作的视频对应的AI参与指数。
+IIIA-AI 要引导用户提供他创作那个视频时，使用的AI产品的名称或大致描述。具体来说，避免生硬、死板，语气要温和，语言表达具有低侵入性，希望用户尽可能多的提供他觉得与AI有一丁点关系的产品，最终由 IIIA-AI 根据IIIA标准文档来选择指数。
+
+这是IIIA标准的文档，被<doc></doc>标签包裹，作为 IIIA-AI 选择AI参与指数的依据：
+<doc>
+“AI参与指数”（Indice d'implication de l'intelligence artificielle，IIIA）尝试提出一套区分网络视频中AI参与度的详细等级标准，旨在帮助视频创作者、观众以及相关行业人员清晰地界定和理解视频在制作过程中AI参与的程度。
+
+## 等级介绍（简略表格）
+
+| 分类       | **等级** | 简介                           |
+| ---------- | -------- | ------------------------------ |
+| 未经AI制作 | 0        | 完全未使用AI                   |
+| 未经AI制作 | 1        | AI仅提供参考，并未参与视频制作 |
+| AI参与制作 | 2        | 人类主导，AI用于提升效果       |
+| AI参与制作 | 3        | 人类审核和筛查过视频全部内容   |
+| AI参与制作 | 4        | 存在未经人类审核的内容         |
+| 由AI制作   | 5        | 完全由AI制作                   |
+| AI主题     | \*       | 视频本身谈论AI                 |
+
+## 等级判定（详细表格）
+
+| **等级** | **核心内容（观点、脚本、逻辑）**                             | **视频制作（素材生成、剪辑）**                               |
+| -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 0        | 完全由人类完成。观点、脚本、逻辑链均由人工构思，无AI参与。   | 完全由人类完成。所有图片/音乐/视频素材均为人工创作或实拍，剪辑完全手动，无AI参与。 |
+| 1        | 完全由人类完成，AI仅作为工具启发创作灵感作为参考（如头脑风暴关键词、热点分析），不直接生成观点。 | 完全由人类完成，AI仅作为工具提供辅助性灵感（如图片搜索建议、音乐片段推荐）。 |
+| 2        | 主要由人类完成，AI进行基础辅助工作（如语法检查、简单文本润色、事实核对提示）。 | 主要由人类完成，AI局部生成少量素材（如背景图、虚拟场景）。人工完成素材整合与核心剪辑。 |
+| 3        | AI 完成大量内容模块（如分镜脚本、观点论据、脚本初稿），但经过人工深度修改、审核、核实事实并最终定稿。人类保留关键决策权。 | AI完成部分关键素材（如主要配图、背景音乐、部分视频片段），但所有素材均经过人工严格筛选、编辑或整合。 |
+| 4        | AI主导内容生产完整逻辑链（如新闻评论的论点推演、故事线设计），人工仅进行有限润色或局部调整（如修改不当表述）。 | AI主导创作，生成大部分或全部素材，人工仅进行抽查式审核。     |
+| 5        | AI独立产出完整内容，无人工干预创作过程。                     | AI全流程自主完成所有素材生成、选择、编辑与剪辑。人类无任何创作干预，仅执操作（如上传、发布）。 |
+| \*       | 修正选项，对于主题围绕AI展开的视频，在其等级后加星号，如“2\*级” | —                                                            |
+</doc>
+
+如果 IIIA-AI 要输出最终选择的AI参与指数，请 **在新的一行** 输出这样的html标签(不带代码块)：
+\`\`\`
+<span level="x">描述文本</span>
+\`\`\`
+
+level是等级，比如0、0*、1、1*等，描述是对于该等级的解释。
+
+IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
+
+        // DOM元素
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const sendText = document.getElementById('send-text');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const resultSection = document.getElementById('result-section');
+        const resultIcon = document.getElementById('result-icon');
+        const resultIndex = document.getElementById('result-index');
+        const resultDescription = document.getElementById('result-description');
+        const copyIconBtn = document.getElementById('copy-icon');
+        const downloadIconBtn = document.getElementById('download-icon');
+        const copyIndexBtn = document.getElementById('copy-index');
+        
+        // 对话历史
+        let messages = [
+            { role: 'system', content: systemPrompt }
+        ];
+        let greetingSent = false;
+        let isWaitingForResponse = false;
+
+        // 添加消息到聊天框
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.innerHTML = marked.parse(text);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 显示AI正在输入状态
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 隐藏AI正在输入状态
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // 发送消息到OpenAI
+        async function sendToOpenAI() {
+            isWaitingForResponse = true;
+            sendBtn.disabled = true;
+            sendText.style.display = 'none';
+            loadingIndicator.style.display = 'inline-block';
+            
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('https://text.pollinations.ai/openai', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/event-stream'
+                    },
+                    body: JSON.stringify({
+                        model: 'openai',
+                        messages: messages,
+                        stream: true,
+                        referrer: "IIIA-AI",
+                        private: true,
+                        seed: Math.floor(Math.random() * (99999 - 1 + 1)) + 1,
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status}`);
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let aiResponse = '';
+                
+                hideTypingIndicator();
+                
+                // 创建AI消息容器
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message ai-message';
+                chatContainer.appendChild(messageDiv);
+                
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                    
+                    for (const line of lines) {
+                        if (line.trim() === 'data: [DONE]') break;
+                        
+                        if (line.startsWith('data: ')) {
+                            const data = line.replace('data: ', '');
+                            try {
+                                const jsonData = JSON.parse(data);
+                                const content = jsonData.choices[0]?.delta?.content || '';
+                                if (content) {
+                                    aiResponse += content;
+                                    messageDiv.innerHTML = marked.parse(aiResponse);
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                            } catch (e) {
+                                console.error('解析错误:', e);
+                            }
+                        }
+                    }
+                }
+                
+                // 将AI响应添加到消息历史
+                messages.push({ role: 'assistant', content: aiResponse });
+                
+                // 检查是否包含结果
+                checkForResult(aiResponse);
+                
+            } catch (error) {
+                console.error('请求出错:', error);
+                addMessage('抱歉，处理您的请求时出错。请稍后再试。', 'ai');
+            } finally {
+                isWaitingForResponse = false;
+                sendBtn.disabled = false;
+                sendText.style.display = 'inline';
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // 检查AI响应中是否包含结果
+        function checkForResult(text) {
+            const regex = /<span level="(\d\*?)">([\s\S]*?)<\/span>/;
+            const match = text.match(regex);
+            
+            if (match) {
+                const level = match[1];
+                const description = match[2].trim();
+                
+                // 显示结果
+                resultIcon.src = iconBaseURLs[level];
+                resultIndex.textContent = `IIIA: ${level}级`;
+                resultDescription.textContent = description;
+                resultSection.style.display = 'block';
+                
+                // 滚动到结果区域
+                setTimeout(() => {
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 500);
+            }
+        }
+
+        // 发送用户消息
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message && !isWaitingForResponse) {
+                // 添加用户消息
+                addMessage(message, 'user');
+                messages.push({ role: 'user', content: message });
+                userInput.value = '';
+                
+                // 发送到OpenAI
+                sendToOpenAI();
+            }
+        }
+
+        // 事件监听
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        userInput.addEventListener('input', function() {
+            sendBtn.disabled = this.value.trim() === '' || isWaitingForResponse;
+        });
+
+        // 复制图标
+        copyIconBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch(resultIcon.src);
+                const blob = await response.blob();
+                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+                await navigator.clipboard.write([clipboardItem]);
+                // alert('图标已复制到剪贴板！');
+            } catch (err) {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制图标');
+            }
+        });
+
+
+        // 下载图标
+        downloadIconBtn.addEventListener('click', async function() {
+            // 获取图片的 URL
+            const url = resultIcon.src;
+            // 生成文件名
+            const filename = `IIIA-${resultIndex.textContent.replace(':', '').trim()}.png`;
+            try {
+                // 使用 fetch 获取图片数据
+                const response = await fetch(url, { mode: 'cors' });
+                // 转为 Blob
+                const blob = await response.blob();
+                // 创建临时链接并下载
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                // 释放 URL 对象
+                URL.revokeObjectURL(a.href);
+            } catch (err) {
+                alert('图片下载失败');
+                console.error(err);
+            }
+        });
+
+        // 复制指数
+        copyIndexBtn.addEventListener('click', function() {
+            const text = `${resultIndex.textContent}`;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    // alert('指数信息已复制到剪贴板！');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制');
+                });
+        });
+
+        // 监听滚动到聊天区域
+        const chatSection = document.getElementById('chat');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !greetingSent) {
+                    greetingSent = true;
+                    // 添加用户消息
+                    addMessage("你好", 'user');
+                    messages.push({ role: 'user', content: "你好" });
+                    // 发送到OpenAI
+                    sendToOpenAI();
+                }
+            });
+        }, { threshold: 0.5 });
+
+        observer.observe(chatSection);
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
