@@ -609,6 +609,103 @@
             40% { transform: translateY(-6px); }
         }
         
+
+        /* 新增的图标预览区域样式 */
+        .icons-preview-section {
+            padding: 80px 0 40px;
+            background: rgba(248, 250, 252, 0.7);
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            margin-top: 60px;
+        }
+        
+        .icons-preview-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: var(--primary);
+            position: relative;
+        }
+        
+        .icons-preview-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        .icons-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 25px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .icon-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .icon-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .icon-preview {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 15px;
+            object-fit: contain;
+        }
+        
+        .icon-name {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+        
+        .icon-level {
+            font-size: 1rem;
+            color: var(--gray);
+        }
+        
+        .icon-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .icon-action-btn {
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .icon-action-btn:hover {
+            background: var(--primary);
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -638,6 +735,16 @@
             .result-content {
                 gap: 30px;
             }
+
+            .icons-container {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 15px;
+            }
+            
+            .icon-preview {
+                width: 80px;
+                height: 80px;
+            }
         }
     </style>
 </head>
@@ -655,6 +762,7 @@
                         <li><a href="#levels">等级说明</a></li>
                         <li><a href="#chat">指数评估</a></li>
                         <li><a href="#resources">资源下载</a></li>
+                        <li><a href="#icons">图标预览</a></li>
                     </ul>
                 </nav>
             </div>
@@ -854,6 +962,16 @@
         </div>
     </section>
 
+    <!-- 新增的图标预览区域 -->
+    <section id="icons" class="icons-preview-section">
+        <div class="container">
+            <h2 class="icons-preview-title">图标预览</h2>
+            <div class="icons-container">
+                <!-- 图标将通过JS动态生成 -->
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="container">
             <div class="footer-content">
@@ -929,6 +1047,22 @@
             "5*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B85*.png"
         };
 
+        // 等级描述
+        const levelDescriptions = {
+            "0": "完全未使用AI",
+            "1": "AI仅提供参考，未参与制作",
+            "2": "人类主导，AI用于提升效果",
+            "3": "人类审核过视频全部内容",
+            "4": "存在未经人类审核的内容",
+            "5": "完全由AI制作",
+            "0*": "完全未使用AI + AI主题",
+            "1*": "AI仅提供参考 + AI主题",
+            "2*": "人类主导 + AI主题",
+            "3*": "人类审核过内容 + AI主题",
+            "4*": "有未经审核内容 + AI主题",
+            "5*": "完全AI制作 + AI主题"
+        };
+
         // 系统提示词
         const systemPrompt = `助手是由 IIIA(Indice d'implication de l'intelligence artificielle)AI参与指数标准化组织创建的IIIA-AI。
 IIIA-AI 喜欢帮助视频创作者选择他创作的视频对应的AI参与指数。
@@ -985,6 +1119,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
         const copyIconBtn = document.getElementById('copy-icon');
         const downloadIconBtn = document.getElementById('download-icon');
         const copyIndexBtn = document.getElementById('copy-index');
+        const iconsContainer = document.querySelector('.icons-container');
         
         // 对话历史
         let messages = [
@@ -1237,6 +1372,84 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
                 }
             });
         });
+
+        // 生成图标预览
+        function generateIconPreviews() {
+            const levels = ['0', '1', '2', '3', '4', '5', '0*', '1*', '2*', '3*', '4*', '5*'];
+            
+            levels.forEach(level => {
+                const iconCard = document.createElement('div');
+                iconCard.className = 'icon-card';
+                
+                const iconImg = document.createElement('img');
+                iconImg.className = 'icon-preview';
+                iconImg.src = iconBaseURLs[level];
+                iconImg.alt = `IIIA ${level}级图标`;
+                
+                const iconName = document.createElement('div');
+                iconName.className = 'icon-name';
+                iconName.textContent = `IIIA: ${level}级`;
+                
+                const iconLevel = document.createElement('div');
+                iconLevel.className = 'icon-level';
+                iconLevel.textContent = levelDescriptions[level];
+                
+                const iconActions = document.createElement('div');
+                iconActions.className = 'icon-actions';
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'icon-action-btn';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> 下载';
+                downloadBtn.onclick = () => downloadIcon(iconImg.src, `IIIA-${level}.png`);
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'icon-action-btn';
+                copyBtn.innerHTML = '<i class="far fa-copy"></i> 复制';
+                copyBtn.onclick = () => copyIcon(iconImg.src);
+                
+                iconActions.appendChild(downloadBtn);
+                iconActions.appendChild(copyBtn);
+                
+                iconCard.appendChild(iconImg);
+                iconCard.appendChild(iconName);
+                iconCard.appendChild(iconLevel);
+                iconCard.appendChild(iconActions);
+                
+                iconsContainer.appendChild(iconCard);
+            });
+        }
+        generateIconPreviews()
+
+        // 下载图标
+        async function downloadIcon(url, filename) {
+            try {
+                const response = await fetch(url, { mode: 'cors' });
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            } catch (err) {
+                alert('图片下载失败');
+                console.error(err);
+            }
+        }
+        
+        // 复制图标
+        async function copyIcon(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+                await navigator.clipboard.write([clipboardItem]);
+            } catch (err) {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制图标');
+            }
+        }
     </script>
 </body>
 </html>
