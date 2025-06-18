@@ -8,21 +8,21 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown.min.css">
     <style>
         .markdown-body {
-        background: #f8fafc !important;
+        /* background: #ebebeb !important; */
         color: #1e293b !important;
         }
         .markdown-body table {
-        background: #f8fafc !important;
+        /* background: #ebebeb !important; */
         }
         .markdown-body th, .markdown-body td {
-        background: #f8fafc !important;
+        /* background: #ebebeb !important; */
         color: #1e293b !important;
         }
         .markdown-body thead {
-        background: #f8fafc !important;
+        /* background: #ebebeb !important; */
         }
         .markdown-body tr:nth-child(2n) {
-        background: #f8fafc !important;
+        /* background: #ebebeb !important; */
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -31,9 +31,8 @@
             --primary: rgb(54, 159, 246);
             --primary-light: rgb(54, 159, 246);
             --primary-dark: rgb(54, 159, 246);
-            --secondary: #10b981;
             --dark: #1e293b;
-            --light: #f8fafc;
+            --light: #ebebeb;
             --gray: #94a3b8;
             --border: #e2e8f0;
             /* --card-bg: rgba(255, 255, 255, 0.9); */
@@ -156,7 +155,6 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="100%" height="100%" fill="white" opacity="0.05"/><path d="M0,0 L200,200 M200,0 L0,200" stroke="%234f46e5" stroke-width="0.5" opacity="0.1"/></svg>');
             z-index: -1;
         }
         
@@ -385,7 +383,7 @@
             font-size: 1rem;
             outline: none;
             transition: var(--transition);
-            background: #f8fafc;
+            background: #ebebeb;
         }
         
         .input-area input:focus {
@@ -610,7 +608,7 @@
         }
         
 
-        /* 新增的图标预览区域样式 */
+        /* 新增的贴纸预览区域样式 */
         .icons-preview-section {
             padding: 80px 0 40px;
             background: rgba(248, 250, 252, 0.7);
@@ -762,7 +760,7 @@
                         <li><a href="#levels">等级说明</a></li>
                         <li><a href="#chat">指数评估</a></li>
                         <li><a href="#resources">资源下载</a></li>
-                        <li><a href="#icons">图标预览</a></li>
+                        <li><a href="#icons">贴纸预览</a></li>
                     </ul>
                 </nav>
             </div>
@@ -794,10 +792,11 @@
     <section id="levels" class="section">
         <div class="container">
             <h2 class="section-title">等级说明</h2>
+            
             <div class="cards">
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">等级 0 & 1</div>
+                        <div class="card-title">等级 0～1</div>
                         <div class="card-subtitle">未经AI制作</div>
                     </div>
                     <div class="card-content">
@@ -812,8 +811,8 @@
                 </div>
                 
                 <div class="card">
-                    <div class="card-header" style="background: #0ea5e9;">
-                        <div class="card-title">等级 2, 3 & 4</div>
+                    <div class="card-header">
+                        <div class="card-title">等级 2～4</div>
                         <div class="card-subtitle">AI参与制作</div>
                     </div>
                     <div class="card-content">
@@ -828,8 +827,8 @@
                 </div>
                 
                 <div class="card">
-                    <div class="card-header" style="background: #8b5cf6;">
-                        <div class="card-title">等级 5 & 主题</div>
+                    <div class="card-header">
+                        <div class="card-title">等级 5</div>
                         <div class="card-subtitle">由AI制作</div>
                     </div>
                     <div class="card-content">
@@ -838,7 +837,19 @@
                             <li><strong>AI主题</strong>：视频内容围绕AI技术展开</li>
                             <li>AI主导整个创作过程</li>
                             <li>人类仅进行上传发布操作</li>
-                            <li>AI主题视频在等级后添加星号(*)</li>
+                        </ul>
+                    </div>
+                </div>
+            
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">附加属性 * </div>
+                        <div class="card-subtitle">与AI相关</div>
+                    </div>
+                    <div class="card-content">
+                        <ul>
+                            <li><strong>AI主题</strong>：视频内容围绕AI技术展开</li>
+                            <li>在IIIA数字后添加星号（如3*）</li>
                         </ul>
                     </div>
                 </div>
@@ -853,7 +864,6 @@
             
             <div class="chat-section">
                 <div class="chat-header">
-                    <div class="chat-icon">IIIA-AI</div>
                     <div>AI参与指数助手</div>
                 </div>
                 <div id="chat-container" class="chat-container">
@@ -872,24 +882,16 @@
                 <h3 class="result-title">您的视频AI参与指数</h3>
                 <div class="result-content">
                     <div class="result-icon-container">
-                        <img id="result-icon" class="result-icon" src="" alt="AI参与指数图标">
+                        <img id="result-icon" class="result-icon" src="" alt="AI参与指数贴纸">
                     </div>
                     <div class="result-details">
                         <div class="result-index" id="result-index"></div>
                         <div class="result-description" id="result-description"></div>
-                        <p style="margin-bottom: 20px; font-weight: 500; font-size: 1.1rem;">图标可直接 <strong>复制/下载</strong> 使用：</p>
+                        <p style="margin-bottom: 20px; font-weight: 500; font-size: 1.1rem;">贴纸可直接 <strong>下载</strong> 使用：</p>
                         <div class="result-actions">
-                            <button class="action-button" id="copy-icon">
-                                <i class="far fa-copy"></i>
-                                复制图标
-                            </button>
                             <button class="action-button" id="download-icon">
                                 <i class="fas fa-download"></i>
-                                下载图标
-                            </button>
-                            <button class="action-button" id="copy-index">
-                                <i class="far fa-copy"></i>
-                                复制指数
+                                下载贴纸
                             </button>
                         </div>
                     </div>
@@ -903,7 +905,7 @@
             <h2 class="section-title">资源与文档</h2>
             <div class="cards">
                 <div class="card">
-                    <div class="card-header" style="background: #10b981;">
+                    <div class="card-header">
                         <div class="card-title">标准文档</div>
                         <!-- <div class="card-subtitle">详细等级标准说明</div> -->
                     </div>
@@ -911,63 +913,17 @@
                         <div id="README.md" class="markdown-body"></div>
                     </div>
                 </div>
-                <!-- <div class="card">
-                    <div class="card-header" style="background: #10b981;">
-                        <div class="card-title">标准文档</div>
-                        <div class="card-subtitle">详细等级标准说明</div>
-                    </div>
-                    <div class="card-content">
-                        <ul>
-                            <li>完整等级判定标准</li>
-                            <li>各等级详细说明</li>
-                            <li>使用指南与最佳实践</li>
-                            <li>案例分析与示例</li>
-                            <li>PDF格式下载</li>
-                        </ul>
-                    </div>
-                </div>
                 
-                <div class="card">
-                    <div class="card-header" style="background: #f59e0b;">
-                        <div class="card-title">图标资源</div>
-                        <div class="card-subtitle">所有等级图标下载</div>
-                    </div>
-                    <div class="card-content">
-                        <ul>
-                            <li>等级0-5标准图标</li>
-                            <li>AI主题(*级)图标</li>
-                            <li>多种格式(PNG, SVG)</li>
-                            <li>不同尺寸选择</li>
-                            <li>设计源文件(PXD)</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header" style="background: #ef4444;">
-                        <div class="card-title">贡献指南</div>
-                        <div class="card-subtitle">参与标准完善</div>
-                    </div>
-                    <div class="card-content">
-                        <ul>
-                            <li>如何提交建议</li>
-                            <li>问题反馈流程</li>
-                            <li>贡献者协议</li>
-                            <li>社区讨论论坛</li>
-                            <li>版本更新日志</li>
-                        </ul>
-                    </div>
-                </div> -->
             </div>
         </div>
     </section>
 
-    <!-- 新增的图标预览区域 -->
+    <!-- 新增的贴纸预览区域 -->
     <section id="icons" class="icons-preview-section">
         <div class="container">
-            <h2 class="icons-preview-title">图标预览</h2>
+            <h2 class="icons-preview-title">贴纸预览</h2>
             <div class="icons-container">
-                <!-- 图标将通过JS动态生成 -->
+                <!-- 贴纸将通过JS动态生成 -->
             </div>
         </div>
     </section>
@@ -975,49 +931,19 @@
     <footer>
         <div class="container">
             <div class="footer-content">
-                <!-- <div class="footer-column">
-                    <h3>AI参与指数</h3>
-                    <ul>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 关于我们</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 标准文档</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 图标资源</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 贡献指南</a></li>
-                    </ul>
-                </div>
+                
                 
                 <div class="footer-column">
-                    <h3>支持</h3>
                     <ul>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 常见问题</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 使用教程</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 联系我们</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 反馈建议</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h3>法律</h3>
-                    <ul>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 使用条款</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 隐私政策</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 许可协议</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> 版权声明</a></li>
-                    </ul>
-                </div> -->
-                
-                <div class="footer-column">
-                    <h3>加入社区</h3>
-                    <ul>
-                        <li><a href="https://github.com/ErSanSan233/IIIA"><i class="fab fa-github"></i> GitHub</a></li>
-                        <!-- <li><a href="#"><i class="fab fa-twitter"></i> Twitter</a></li> -->
-                        <!-- <li><a href="#"><i class="fab fa-discord"></i> Discord</a></li> -->
-                        <!-- <li><a href="#"><i class="fab fa-youtube"></i> YouTube</a></li> -->
+                        <li><a href="https://github.com/ErSanSan233/IIIA"><i class="fab fa-github"></i> GitHub</a>
+                        </li>
+
                     </ul>
                 </div>
             </div>
 
             <div class="copyright">
-                © 2025 AI参与指数(IIIA) | MIT许可证 | 让AI创作更加透明可信
+                © 2025 良我叫什么 | MIT许可证 | 让AI创作更加透明可信 | 本网页 IIIA 4*
             </div>
         </div>
     </footer>
@@ -1031,7 +957,7 @@
         });
 
         
-        // 图标资源
+        // 贴纸资源
         const iconBaseURLs = {
             "0": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B80.png",
             "1": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B81.png",
@@ -1116,9 +1042,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
         const resultIcon = document.getElementById('result-icon');
         const resultIndex = document.getElementById('result-index');
         const resultDescription = document.getElementById('result-description');
-        const copyIconBtn = document.getElementById('copy-icon');
         const downloadIconBtn = document.getElementById('download-icon');
-        const copyIndexBtn = document.getElementById('copy-index');
         const iconsContainer = document.querySelector('.icons-container');
         
         // 对话历史
@@ -1292,22 +1216,8 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
             sendBtn.disabled = this.value.trim() === '' || isWaitingForResponse;
         });
 
-        // 复制图标
-        copyIconBtn.addEventListener('click', async function() {
-            try {
-                const response = await fetch(resultIcon.src);
-                const blob = await response.blob();
-                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-                await navigator.clipboard.write([clipboardItem]);
-                // alert('图标已复制到剪贴板！');
-            } catch (err) {
-                console.error('复制失败:', err);
-                alert('复制失败，请手动复制图标');
-            }
-        });
 
-
-        // 下载图标
+        // 下载贴纸
         downloadIconBtn.addEventListener('click', async function() {
             // 获取图片的 URL
             const url = resultIcon.src;
@@ -1331,19 +1241,6 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
                 alert('图片下载失败');
                 console.error(err);
             }
-        });
-
-        // 复制指数
-        copyIndexBtn.addEventListener('click', function() {
-            const text = `${resultIndex.textContent}`;
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    // alert('指数信息已复制到剪贴板！');
-                })
-                .catch(err => {
-                    console.error('复制失败:', err);
-                    alert('复制失败，请手动复制');
-                });
         });
 
         // 监听滚动到聊天区域
@@ -1373,7 +1270,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
             });
         });
 
-        // 生成图标预览
+        // 生成贴纸预览
         function generateIconPreviews() {
             const levels = ['0', '1', '2', '3', '4', '5', '0*', '1*', '2*', '3*', '4*', '5*'];
             
@@ -1384,7 +1281,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
                 const iconImg = document.createElement('img');
                 iconImg.className = 'icon-preview';
                 iconImg.src = iconBaseURLs[level];
-                iconImg.alt = `IIIA ${level}级图标`;
+                iconImg.alt = `IIIA ${level}级贴纸`;
                 
                 const iconName = document.createElement('div');
                 iconName.className = 'icon-name';
@@ -1402,13 +1299,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
                 downloadBtn.innerHTML = '<i class="fas fa-download"></i> 下载';
                 downloadBtn.onclick = () => downloadIcon(iconImg.src, `IIIA-${level}.png`);
                 
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'icon-action-btn';
-                copyBtn.innerHTML = '<i class="far fa-copy"></i> 复制';
-                copyBtn.onclick = () => copyIcon(iconImg.src);
-                
                 iconActions.appendChild(downloadBtn);
-                iconActions.appendChild(copyBtn);
                 
                 iconCard.appendChild(iconImg);
                 iconCard.appendChild(iconName);
@@ -1420,7 +1311,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
         }
         generateIconPreviews()
 
-        // 下载图标
+        // 下载贴纸
         async function downloadIcon(url, filename) {
             try {
                 const response = await fetch(url, { mode: 'cors' });
@@ -1438,18 +1329,6 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
             }
         }
         
-        // 复制图标
-        async function copyIcon(url) {
-            try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-                await navigator.clipboard.write([clipboardItem]);
-            } catch (err) {
-                console.error('复制失败:', err);
-                alert('复制失败，请手动复制图标');
-            }
-        }
     </script>
 </body>
 </html>
