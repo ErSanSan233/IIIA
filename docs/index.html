@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI参与指数 | IIIA标准化组织</title>
+    <title>AI参与指数</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown.min.css">
     <style>
@@ -28,15 +28,15 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-light: #818cf8;
-            --primary-dark: #3730a3;
+            --primary: rgb(54, 159, 246);
+            --primary-light: rgb(54, 159, 246);
+            --primary-dark: rgb(54, 159, 246);
             --secondary: #10b981;
             --dark: #1e293b;
             --light: #f8fafc;
             --gray: #94a3b8;
             --border: #e2e8f0;
-            --card-bg: rgba(255, 255, 255, 0.9);
+            /* --card-bg: rgba(255, 255, 255, 0.9); */
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --transition: all 0.3s ease;
         }
@@ -49,7 +49,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            background: #ffffff;
             color: var(--dark);
             line-height: 1.6;
             min-height: 100vh;
@@ -772,7 +772,7 @@
     <section class="hero">
         <div class="container">
             <h1>透明化AI创作，建立信任新标准</h1>
-            <p>IIIA标准化组织提供AI参与指数评估，帮助视频创作者清晰标注AI参与程度，让观众了解创作过程</p>
+            <p>IIIA提供AI参与指数评估，帮助视频创作者清晰标注AI参与程度，让观众了解创作过程</p>
             <a href="#chat" class="cta-button">开始评估我的视频 <i class="fas fa-arrow-right"></i></a>
         </div>
     </section>
@@ -782,7 +782,7 @@
             <h2 class="section-title">关于AI参与指数</h2>
             <div class="about-content">
                 <p style="text-align: left; max-width: 900px; margin: 0 auto 30px; font-size: 1.5rem; line-height: 2.5;">
-                    AI参与指数（Indice d'implication de l'intelligence artificielle，IIIA）是一套由开源社区 IIIA 标准化组织制定的详细等级标准，
+                    AI参与指数（Indice d'implication de l'intelligence artificielle，IIIA）是一套详细等级标准，
                     <strong>旨在帮助视频创作者、观众以及相关行业人员清晰地界定和理解视频在制作过程中AI参与的程度。</strong>
                     <br/>
                     该标准将AI参与分为0-5级，并包含AI主题标识(*)，为数字内容创作透明度设立了新标杆。
@@ -1017,7 +1017,7 @@
             </div>
 
             <div class="copyright">
-                © 2025 AI参与指数(IIIA)标准化组织 | MIT许可证 | 让AI创作更加透明可信
+                © 2025 AI参与指数(IIIA) | MIT许可证 | 让AI创作更加透明可信
             </div>
         </div>
     </footer>
@@ -1064,7 +1064,7 @@
         };
 
         // 系统提示词
-        const systemPrompt = `助手是由 IIIA(Indice d'implication de l'intelligence artificielle)AI参与指数标准化组织创建的IIIA-AI。
+        const systemPrompt = `助手是由 IIIA(Indice d'implication de l'intelligence artificielle)AI参与指数相关贡献者创建的IIIA-AI。
 IIIA-AI 喜欢帮助视频创作者选择他创作的视频对应的AI参与指数。
 IIIA-AI 要引导用户提供他创作那个视频时，使用的AI产品的名称或大致描述。具体来说，避免生硬、死板，语气要温和，语言表达具有低侵入性，希望用户尽可能多的提供他觉得与AI有一丁点关系的产品，最终由 IIIA-AI 根据IIIA标准文档来选择指数。
 
