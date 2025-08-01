@@ -1,3 +1,7 @@
+# IIIA - AI参与指数
+
+![IIIA-1*](https://img.shields.io/badge/IIIA-1*-D9A295)
+
 “AI参与指数”（Indice d'implication de l'intelligence artificielle，IIIA）尝试提出一套区分网络视频中AI参与度的详细等级标准，旨在帮助视频创作者、观众以及相关行业人员清晰地界定和理解视频在制作过程中AI参与的程度。
 
 ## 等级介绍（简略表格）
@@ -27,6 +31,21 @@
 ## 使用说明
 
 创作者在发布视频时，可以根据视频实际的制作情况，参考本等级标准明确标注视频的AI参与等级，以“AI参与指数：`等级`”或“IIIA: `IIIA`”字样标注，或展示相应等级[贴纸](贴纸)，让观众更清晰地了解视频的创作过程。
+
+如果您的项目带有README.md文件，可以使用如下徽章来展示您项目的IIIA：
+
+- [![IIIA-0](https://img.shields.io/badge/IIIA-0-FAB689)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-0*](https://img.shields.io/badge/IIIA-0*-FAB689)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-1](https://img.shields.io/badge/IIIA-1-D9A295)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-1*](https://img.shields.io/badge/IIIA-1*-D9A295)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-2](https://img.shields.io/badge/IIIA-2-B97CAC)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-2*](https://img.shields.io/badge/IIIA-2*-B97CAC)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-3](https://img.shields.io/badge/IIIA-3-A865B3)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-3*](https://img.shields.io/badge/IIIA-3*-A865B3)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-4](https://img.shields.io/badge/IIIA-4-9370DB)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-4*](https://img.shields.io/badge/IIIA-4*-9370DB)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-5](https://img.shields.io/badge/IIIA-5-4D6BFE)](https://github.com/ErSanSan233/IIIA)
+- [![IIIA-5*](https://img.shields.io/badge/IIIA-5*-4D6BFE)](https://github.com/ErSanSan233/IIIA)
 
 观众在观看视频时，可以查看创作者标注的等级，从而判断视频在制作和内容创作方面AI的参与程度。
 
