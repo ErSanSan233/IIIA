@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IIIA 贴纸复刻（1.1 双维度）</title>
+<style>
+  :root{
+    --blue:#41b0f6;
+    --c0:#fbb47e; --c1:#d39390; --c2:#b660a8; --c3:#b84ccc; --c4:#8e61e5; --c5:#4d6bfe;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:36px 24px 60px;
+    background:#eef0f4;
+    font-family:"Alibaba PuHuiTi","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    display:flex; flex-direction:column; align-items:center; gap:28px;
+    color:#333;
+  }
+  h1{ font-size:16px; font-weight:600; margin:0; color:#555; }
+
+  /* ===== 贴纸本体（500×400，坐标对齐原 SVG） ===== */
+  .sticker{
+    position:relative; width:500px; height:400px;
+    background:var(--blue);
+    border-radius:30px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+  }
+  .header{
+    position:absolute; top:0; left:0; right:0; height:70px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:50px; font-weight:700;
+    letter-spacing:-2px;
+    padding-bottom:8px;
+  }
+  .card{
+    position:absolute; left:10px; right:10px; top:70px; bottom:10px;
+    background:#fff; border-radius:26px;
+  }
+  .title{
+    position:absolute; top:38px; left:0; right:0;
+    text-align:center; font-size:41px; font-weight:600; color:#000;
+    letter-spacing:1px;
+  }
+  .title .num{ margin-left:10px; }
+  .title .star-mark{ margin-left:2px; }
+
+  /* 柱状区：上下两组关于「人工制作—自动生成」轴镜像 */
+  .chart{ position:absolute; inset:0; }
+  .row{ position:absolute; left:0; right:0; }
+  .row.top{ bottom:var(--row-bottom, 50.3px); }
+  .row.bot{ top:var(--row-bot-top, 230.5px); display:none; }
+
+  .pill{
+    position:absolute; width:62.4px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:38px; font-weight:700;
+    transition:height .25s ease;
+  }
+  .row.top .pill{ bottom:0; border-radius:21px 21px 10px 10px; }
+  .row.bot .pill{ top:0;    border-radius:10px 10px 21px 21px; }  /* 镜像：圆头在下 */
+
+  .star{
+    position:absolute; top:105px; width:28px; height:27px;
+    transition:left .25s ease, top .25s ease;
+  }
+  .lab{
+    position:absolute; top:277px;
+    font-size:19px; font-weight:700; color:#000; line-height:23px;
+    transition:top .25s ease;
+  }
+  .lab.left{ left:20px; }
+  .lab.right{ right:20px; }
+
+  /* ===== 控制面板 ===== */
+  .panel{
+    width:500px; max-width:92vw;
+    display:flex; flex-direction:column; gap:14px;
+    background:#fff; border-radius:14px; padding:18px 22px;
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    font-size:14px;
+  }
+  .row-head{ display:flex; align-items:center; gap:8px; }
+  .dim{ font-weight:600; white-space:nowrap; }
+  .dim .sub{ font-weight:400; color:#999; font-size:11px; margin-left:6px; }
+  .tag{
+    font-size:12px; font-weight:700; color:#fff; background:#999;
+    border-radius:5px; padding:1px 6px;
+  }
+  .btns{ display:flex; gap:6px; margin-left:auto; }
+  .btns button{
+    width:36px; height:36px; border:none; border-radius:9px;
+    background:#e8ebf1; color:#333; font-size:16px; font-weight:600;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .desc{
+    margin-top:8px;
+    font-size:13px; line-height:1.65; color:#555;
+    background:#f5f6f9; border-radius:9px; padding:10px 12px;
+    min-height:64px;
+  }
+  .desc b{ color:#222; font-weight:700; margin-right:6px; }
+  .foot{
+    display:flex; align-items:center; justify-content:space-between;
+    border-top:1px solid #eceef2; padding-top:12px; font-size:13px; color:#666;
+  }
+  .foot label{ display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; color:#333; }
+  .foot input[type=checkbox]{ accent-color:#4d6bfe; width:15px; height:15px; }
+  #code{ font-weight:700; color:#222; letter-spacing:.5px; }
+</style>
+</head>
+<body>
+
+<h1>IIIA 参与指数贴纸 · HTML 复刻（字体占位，待替换）</h1>
+
+<div class="sticker">
+  <div class="header">人工智能参与指数</div>
+  <div class="card">
+    <div class="title">等级<span class="num"><span id="lvNum">5</span><span class="star-mark" id="lvStar">*</span></span></div>
+    <div class="chart" id="chart">
+      <div class="row top" id="rowTop"></div>
+      <div class="row bot" id="rowBot"></div>
+      <svg class="star" id="star" viewBox="52.5 175 28 27" xmlns="http://www.w3.org/2000/svg">
+        <path id="starPath" fill="#4d6bfe" d="M 69.329 185.007 L 69.329 175.878 L 63.487 175.878 L 63.487 185.007 L 55.235 181.793 L 53.263 187.417 L 61.734 190.265 L 56.330 197.422 L 61.223 201 L 66.335 193.478 L 71.739 201 L 76.559 197.422 L 71.155 190.265 L 79.773 187.417 L 77.801 181.793 Z"/>
+      </svg>
+    </div>
+    <div class="lab left">人工制作</div>
+    <div class="lab right">自动生成</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div>
+    <div class="row-head">
+      <span class="dim">主旨思路<span class="sub">立意 · 观点 · 叙事 · 脚本</span></span>
+      <span class="tag" style="background:#b84ccc">Z</span>
+      <span class="btns" id="zBtns"></span>
+    </div>
+    <div class="desc" id="descZ"></div>
+  </div>
+
+  <div>
+    <div class="row-head">
+      <span class="dim">实现过程<span class="sub">素材 · 润色 · 剪辑 · 后期</span></span>
+      <span class="tag" style="background:#4d6bfe">S</span>
+      <span class="btns" id="sBtns"></span>
+    </div>
+    <div class="desc" id="descS"></div>
+  </div>
+
+  <div class="foot">
+    <label><input type="checkbox" id="starToggle" checked> AI主题</label>
+    <span>当前标注 <span id="code">IIIA5*</span></span>
+  </div>
+</div>
+
+<script>
+  /* 判定文案取自 README 1.1「维度判定表」 */
+  const DESC_Z = [
+    "完全由人类完成。立意、观点、叙事与逻辑链均由人工构思，AI 未参与。",
+    "完全由人类完成，AI 仅作为工具启发灵感或提供参考（如头脑风暴关键词、热点分析），不直接生成观点。",
+    "主要由人类完成，AI 进行基础辅助工作（如语法检查、简单文本润色、事实核对提示）。",
+    "AI 完成大量内容模块（如分镜脚本、观点论据、脚本初稿），但经人工深度修改、审核、核实事实并最终定稿，人类保留关键决策权。",
+    "AI 主导内容生产的完整逻辑链（如评论的论点推演、故事线设计），人工仅进行有限润色或局部调整（如修改不当表述）。",
+    "AI 独立产出完整内容，无人工干预创作过程。"
+  ];
+  const DESC_S = [
+    "完全由人类完成。所有素材均为人工创作或实拍，剪辑、排版、后期完全手动，AI 未参与。",
+    "完全由人类完成，AI 仅作为工具提供辅助性灵感（如图片搜索建议、音乐片段推荐）。",
+    "主要由人类完成，AI 局部生成少量素材（如背景图、虚拟场景），人工完成素材整合与核心制作。",
+    "AI 完成部分关键素材（如主要配图、背景音乐、部分片段），但所有素材均经人工严格筛选、编辑或整合。",
+    "AI 主导创作，生成大部分或全部素材，人工仅进行抽查式审核。",
+    "AI 全流程自主完成所有素材的生成、选择、编辑与合成。人类无任何创作干预，仅执行操作（如上传、发布）。"
+  ];
+
+  const COLORS = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
+  const PILL_W = 62.4, GAP = 11.24, X0 = 25;           // 卡片内坐标：首列 x=25，列距 73.64
+  let Z = 5, S = 5, aiTheme = true;
+
+  /* 两组几何（卡片内坐标，卡片高 320）
+     G1 单数字：柱底贴轴上方，激活柱 128.7 / 静止 71.7，轴标签落在底部
+     G2 两位数：上下两组关于轴镜像，激活柱 78 / 静止 44，总高与字号不变 */
+  const G1 = { hi:71.7, ha:128.7, rowBottom:50.3, rowBotTop:0,   labTop:277,   starTop:105   };
+  const G2 = { hi:44,   ha:78,    rowBottom:118.5, rowBotTop:230.5, labTop:204.5, starTop:87.5 };
+
+  const chart    = document.getElementById("chart");
+  const rowTop   = document.getElementById("rowTop");
+  const rowBot   = document.getElementById("rowBot");
+  const star     = document.getElementById("star");
+  const starPath = document.getElementById("starPath");
+  const labs     = [document.querySelector(".lab.left"), document.querySelector(".lab.right")];
+
+  const STAR_CENTER0 = X0 + PILL_W / 2 - 0.5;          // 星标以 0 号柱中心为基准平移
+  const DIGIT_INSET  = 73;                             // 数字停在距柱端 23px：padding = 高 - 73
+
+  const topPills = [], botPills = [];
+
+  function makeRow(host, store){
+    for (let i = 0; i < 6; i++){
+      const p = document.createElement("div");
+      p.className = "pill";
+      p.style.left = (X0 + i * (PILL_W + GAP)) + "px";
+      p.style.background = COLORS[i];
+      p.textContent = i;
+      host.appendChild(p);
+      store.push(p);
+    }
+  }
+  makeRow(rowTop, topPills);
+  makeRow(rowBot, botPills);
+
+  function compose(z, s){                    // 合成规则：差值 ≤1 折叠单数字，≥2 主旨位在前
+    return Math.abs(z - s) <= 1 ? "" + Math.max(z, s) : "" + z + s;
+  }
+
+  // 立柱：top 行向上生长（数字靠柱顶），bot 行向下生长（数字靠柱底，镜像）
+  function setPills(list, onIndex, g, mirrored){
+    list.forEach((p, i) => {
+      const h = i === onIndex ? g.ha : g.hi;
+      const pad = Math.max(0, h - DIGIT_INSET);
+      p.style.height = h + "px";
+      p.style.paddingTop    = mirrored ? pad + "px" : "0px";
+      p.style.paddingBottom = mirrored ? "0px" : pad + "px";
+    });
+  }
+
+  function render(){
+    const two = Math.abs(Z - S) >= 2;
+    const g = two ? G2 : G1;
+    const folded = Math.max(Z, S);
+
+    chart.style.setProperty("--row-bottom", g.rowBottom + "px");
+    rowBot.style.display = two ? "block" : "none";
+    rowBot.style.setProperty("--row-bot-top", g.rowBotTop + "px");
+    labs.forEach(l => l.style.top = g.labTop + "px");
+
+    setPills(topPills, two ? Z : folded, g, false);              // 上组：主旨位（单数字时为折叠值）
+    if (two) setPills(botPills, S, g, true);                     // 下组：实现位，镜像
+
+    const anchor = two ? Z : folded;        // 星标始终在上组伸长的那根柱子上
+    star.style.top = g.starTop + "px";
+    star.style.left = (STAR_CENTER0 + anchor * (PILL_W + GAP) - 14) + "px";
+    star.style.display = aiTheme ? "block" : "none";
+    starPath.setAttribute("fill", COLORS[anchor]);
+
+    const code = compose(Z, S);
+    document.getElementById("lvNum").textContent = code;
+    document.getElementById("lvStar").style.display = aiTheme ? "inline" : "none";
+    document.getElementById("code").textContent = "IIIA" + code + (aiTheme ? "*" : "");
+
+    document.getElementById("descZ").innerHTML = "<b>Z" + Z + "</b>" + DESC_Z[Z];
+    document.getElementById("descS").innerHTML = "<b>S" + S + "</b>" + DESC_S[S];
+
+    document.querySelectorAll("#zBtns button").forEach((b, i) => {
+      b.style.background = i === Z ? COLORS[i] : "#e8ebf1";
+      b.style.color = i === Z ? "#fff" : "#333";
+    });
+    document.querySelectorAll("#sBtns button").forEach((b, i) => {
+      b.style.background = i === S ? COLORS[i] : "#e8ebf1";
+      b.style.color = i === S ? "#fff" : "#333";
+    });
+  }
+
+  function makeBtns(hostId, onPick){
+    const host = document.getElementById(hostId);
+    for (let i = 0; i < 6; i++){
+      const b = document.createElement("button");
+      b.textContent = i;
+      b.onclick = () => { onPick(i); render(); };
+      host.appendChild(b);
+    }
+  }
+  makeBtns("zBtns", v => Z = v);
+  makeBtns("sBtns", v => S = v);
+
+  document.getElementById("starToggle").onchange = e => { aiTheme = e.target.checked; render(); };
+
+  render();
+</script>
+</body>
+</html>
