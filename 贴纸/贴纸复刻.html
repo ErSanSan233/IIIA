@@ -8,6 +8,8 @@
   :root{
     --blue:#41b0f6;
     --c0:#fbb47e; --c1:#d39390; --c2:#b660a8; --c3:#b84ccc; --c4:#8e61e5; --c5:#4d6bfe;
+    --dur:.32s;
+    --ease:cubic-bezier(.4,0,.2,1);
   }
   *{ box-sizing:border-box; }
   body{
@@ -39,29 +41,74 @@
     background:#fff; border-radius:26px;
   }
 
-  /* 柱状区：上下两组关于「人工制作—自动生成」轴镜像 */
+  /* 柱状区：上下两组关于「人工制作—自动生成」轴镜像
+     上下留白取 25，与柱组的左右留白（左 25 / 右 24.4）对齐
+     以下数值为 G1 形态的首帧占位，render() 会按 PAD_V 推导后覆盖 */
   .chart{ position:absolute; inset:0; }
   .row{ position:absolute; left:0; right:0; }
-  .row.top{ bottom:var(--row-bottom, 50.3px); }
-  .row.bot{ top:var(--row-bot-top, 230.5px); display:none; }
+  .row.top{ bottom:55.3px; transition:bottom var(--dur) var(--ease); }
+  .row.bot{ top:295px; }                            /* 下组生长基线：内容块底边，远离轴带 */
 
   .pill{
     position:absolute; width:62.4px;
     display:flex; align-items:center; justify-content:center;
-    color:#fff; font-size:38px; font-weight:700;
-    transition:height .25s ease;
+    color:#fff; font-size:30px; font-weight:700;
+    overflow:hidden;
+    transition:height var(--dur) var(--ease),
+               padding-top var(--dur) var(--ease),
+               padding-bottom var(--dur) var(--ease),
+               bottom var(--dur) var(--ease),
+               background-color var(--dur) var(--ease);
   }
   .row.top .pill{ bottom:0; border-radius:21px 21px 10px 10px; }
-  .row.bot .pill{ top:0;    border-radius:10px 10px 21px 21px; }  /* 镜像：圆头在下 */
+  /* 镜像：圆头在下。bottom 由 JS 给出「长出后整体上移」的位移量 */
+  .row.bot .pill{ bottom:0; border-radius:10px 10px 21px 21px; }
 
+  /* 星标纵向位置在两种形态下恒定，只有横向平移参与过渡
+     出现/消失：缩放 0↔1 + 旋转 −120°↔0，统一走 --dur / --ease 缓出 */
   .star{
-    position:absolute; top:105px; width:28px; height:27px;
-    transition:left .25s ease, top .25s ease;
+    position:absolute; top:25px; left:409.9px; width:28px; height:27px;
+    transform-origin:50% 50%;
+    transition:left var(--dur) var(--ease),
+               transform var(--dur) var(--ease),
+               opacity calc(var(--dur) * .6) var(--ease);
   }
+  .star.off{
+    transform:scale(0) rotate(-120deg); opacity:0;
+  }
+
+  /* 指数缺口：白底在角落被「咬」掉一个正方形，露出外框蓝底，数字用白色反白
+     做法是叠一块同色蓝——外框底色是纯蓝，与真镂空像素级一致，
+     且能盖掉卡片自己的圆角，缺口外沿才是直的（卡片没有 overflow:hidden，不会被裁）
+     形状必须用 SVG path 画，border-radius 做不到：圆角有归属问题
+       · 缺口内角（靠近卡心那个）—— 圆角归蓝底，即普通倒圆角，白鼓进来
+       · 缺口与卡片两条边相接的两个角 —— 圆角必须归白底，蓝要向外鼓出 r
+         若把圆角判给蓝底（给方块倒圆角），白底会被挤成一根渐细到 0 的发丝（尖尖）：
+         缺口左边缘本来就与卡片左边缘重合、蓝蓝相接，白没有容身之处
+         反过来鼓出后，渐细的那根刺是蓝色、融进卡片外的底色里，看不见
+       · 贴着卡角的那一角保持方角：那里已是卡片之外，倒圆会露出白边 */
+  .notch{
+    position:absolute; top:0;
+    transition:transform var(--dur) var(--ease),
+               opacity calc(var(--dur) * .6) var(--ease);
+  }
+  .notch.left { left:0;  transform-origin:0 0; }
+  .notch.right{ right:0; transform-origin:100% 0; }
+  .notch.off  { transform:scale(0); opacity:0; }
+  .notch svg  { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .notch path { fill:var(--blue); }
+  .notch .num{
+    position:absolute; top:0;                 /* 数字居中于缺口的方形部分 */
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; line-height:1;
+  }
+  .notch.left .num { left:0; }
+  .notch.right .num{ right:0; }
+
   .lab{
-    position:absolute; top:277px;
+    position:absolute; top:272px;
     font-size:19px; font-weight:700; color:#000; line-height:23px;
-    transition:top .25s ease;
+    transition:top var(--dur) var(--ease);
   }
   .lab.left{ left:20px; }
   .lab.right{ right:20px; }
@@ -167,26 +214,64 @@
   ];
 
   const COLORS = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
-  const PILL_W = 62.4, GAP = 11.24, X0 = 25;           // 卡片内坐标：首列 x=25，列距 73.64
+  const GAP = 11.24, X0 = 25;                          // 卡片内坐标：首列 x=25，列距 73.64
+  const W1 = 62.4;                                     // 柱宽恒定，6 根总宽 430.6，左右留白各 25 / 24.4
   let Z = 5, S = 5, aiTheme = true;
 
-  /* 两组几何（卡片内坐标，卡片高 320，柱高与字号均不变）
-     去掉「等级」标题后重新配平：内容块上下留白相等
-     G1 单数字：星标 27 + 间隙 9 + 激活柱 128.7 + 间隙 7.3 + 轴标签 23 = 195，上下各留 62.5
-     G2 两位数：星标 36 + 激活柱 78 + 轴带 29 + 激活柱 78 = 221，上下各留 49.5
-               两组关于轴心 178 镜像（轴标签 166.5–189.5 居中） */
-  const G1 = { hi:71.7, ha:128.7, rowBottom:92.8,  rowBotTop:0,     labTop:234.5, starTop:62.5 };
-  const G2 = { hi:44,   ha:78,    rowBottom:156.5, rowBotTop:192.5, labTop:166.5, starTop:49.5 };
+  /* 几何（卡片内坐标，卡片 480 × 320）——全部由上下留白 PAD_V 推导，调一处即可整体缩放
+     上下留白取 25，与柱组左右留白（左 25 / 右 24.4）一致；内容块恒为 25…295，居中于 160
+     柱顶恒为 61（星标 25–52 + 间隙 9），星标区在两种形态下完全静止，切换时只有柱底与轴标签移动
+     G1 单数字：激活柱 203.7 + 间隙 7.3 + 轴标签 23
+     G2 两位数：上柱 102.5 + 轴带 29 + 下柱 102.5，两组关于轴心 178 镜像 */
+  const PAD_V = 25;                                   // 上下留白
+  const STAR_H = 27, GAP_A = 9, GAP_B = 7.3, LAB_H = 23, BAND = 29;
+  const RATIO  = 71.7 / 128.7;                        // 非激活柱 / 激活柱，沿用原设计比例
 
-  const chart    = document.getElementById("chart");
+  const TOP_Y = PAD_V + STAR_H + GAP_A;               // 柱顶 61
+  const END_Y = 320 - PAD_V;                          // 内容块底 295
+
+  const G1_HA = END_Y - TOP_Y - GAP_B - LAB_H;        // 203.7
+  const G2_HA = (END_Y - TOP_Y - BAND) / 2;           // 102.5
+  const G2_MID = TOP_Y + G2_HA;                       // 上柱底 163.5
+
+  /* 短柱长度：以两位数形态（空间最紧者）定，两种形态统一取同一个值
+     一位数形态不再按自身比例放大——长柱 203.7 配短柱 113.5 会显得过于参差 */
+  const SHORT_H = +(G2_HA * RATIO).toFixed(1);        // 57.1
+
+  const G1 = { ha:+G1_HA.toFixed(1), hi:SHORT_H, rowBottom:+(320 - (END_Y - GAP_B - LAB_H)).toFixed(1), labTop:END_Y - LAB_H };
+  const G2 = { ha:+G2_HA.toFixed(1), hi:SHORT_H, rowBottom:+(320 - G2_MID).toFixed(1),                  labTop:G2_MID + (BAND - LAB_H) / 2 };
+  const BOT_BASE = END_Y;                             // 下组基线 295：柱子自最底边长出，再整体上移
+  // 长柱一路伸到顶端 G2_MID + BAND(192.5)；短柱只长 hi，故需上移 ha−hi 才能同样齐平于 192.5
+
+  /* 指数缺口：自卡片顶角起算，尺寸按两位数形态（空间最紧者）配平
+     短柱顶 = G2_MID − G2.hi = 106.4，这块空间对半分：「缺口边长」=「缺口底边到短柱的距离」= 53.2 */
+  const NOTCH_S     = +((G2_MID - G2.hi) / 2).toFixed(1);      // 53.2
+  const NOTCH_PAD   = 5;                                       // 缺口内文字四周留白
+  const NOTCH_INNER = +(NOTCH_S - NOTCH_PAD * 2).toFixed(1);   // 文字可用区 43.2
+  const NOTCH_R     = 14;                                      // 缺口圆角
+  const NOTCH_W     = +(NOTCH_S + NOTCH_R).toFixed(1);         // 含向外鼓出部分的包围盒 67.2
+
   const rowTop   = document.getElementById("rowTop");
   const rowBot   = document.getElementById("rowBot");
   const star     = document.getElementById("star");
   const starPath = document.getElementById("starPath");
-  const labs     = [document.querySelector(".lab.left"), document.querySelector(".lab.right")];
+  const labs = document.querySelectorAll(".lab");
 
-  const STAR_CENTER0 = X0 + PILL_W / 2 - 0.5;          // 星标以 0 号柱中心为基准平移
-  const DIGIT_INSET  = 73;                             // 数字停在距柱端 23px：padding = 高 - 73
+  /* 数字定位基准 = 短柱高：pad = max(0, h − DIGIT_INSET)
+     长柱 pad = h − 57.1（数字落在柱端往上 57.1 的区间内），短柱 pad = 0（整柱居中）
+     两种算法得到的数字中心都是距柱端 28.55，六根柱子的数字才会排在同一条线上
+     原值 73 是按旧版短柱 71.7 取的，短柱改为 57.1 后必须同步，否则长短柱数字会错开 8px */
+  const DIGIT_INSET  = SHORT_H;                        // 57.1
+
+  /* 短柱（非激活）降透明度，退到背景层
+     透明度加在 background 上，数字保持白字——底色变浅后白字会自然糊掉，
+     这是有意为之：非激活档位本就该弱化，只有激活那根的数字需要清晰可读
+     （整柱加 opacity 效果类似，但会把白字一起拖淡，没有额外好处） */
+  const DIM_A = 0.55;                                  // 短柱不透明度，取 50–60% 中段
+  function rgba(hex, a){
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
 
   const topPills = [], botPills = [];
 
@@ -194,7 +279,8 @@
     for (let i = 0; i < 6; i++){
       const p = document.createElement("div");
       p.className = "pill";
-      p.style.left = (X0 + i * (PILL_W + GAP)) + "px";
+      p.style.width = W1 + "px";
+      p.style.left = (X0 + i * (W1 + GAP)) + "px";
       p.style.background = COLORS[i];
       p.textContent = i;
       host.appendChild(p);
@@ -204,18 +290,80 @@
   makeRow(rowTop, topPills);
   makeRow(rowBot, botPills);
 
+  /* 缺口形状（局部坐标，原点在卡角）。s = 方形边长，r = 圆角，W = s + r
+     路径走向（以左上角缺口为例）：
+       卡角(0,0) → 上边到 (W,0) → 鼓出弧到 (s,r) → 右边到 (s,s−r)
+       → 内角弧到 (s−r,s) → 下边到 (r,s) → 鼓出弧到 (0,W) → 闭合回卡角
+     两条「鼓出弧」的圆心在 (s+r,r) 与 (r,s+r)，圆弧朝卡心方向凸出，把圆角让给白底 */
+  function notchPath(mirror){
+    const s = NOTCH_S, r = NOTCH_R, W = NOTCH_W;
+    const X = v => +(mirror ? W - v : v).toFixed(2);
+    const A = (x2, y2, sweep) =>
+      "A " + r + " " + r + " 0 0 " + (mirror ? 1 - sweep : sweep) + " " + X(x2) + " " + y2;
+    return [
+      "M " + X(0) + " 0",
+      "L " + X(W) + " 0",
+      A(s, r, 0),                       // 与上边相接：蓝向右鼓出
+      "L " + X(s) + " " + (s - r),
+      A(s - r, s, 1),                   // 内角：蓝被切掉，白鼓进来
+      "L " + X(r) + " " + s,
+      A(0, s + r, 0),                   // 与左边相接：蓝向下鼓出
+      "Z"
+    ].join(" ");
+  }
+
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const notches = ["left", "right"].map((side, i) => {
+    const n = document.createElement("div");
+    n.className = "notch " + side;
+    n.style.width = n.style.height = NOTCH_W + "px";
+
+    const svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + NOTCH_W + " " + NOTCH_W);
+    const path = document.createElementNS(SVGNS, "path");
+    path.setAttribute("d", notchPath(i === 1));      // 右侧缺口为水平镜像
+    svg.appendChild(path);
+    n.appendChild(svg);
+
+    const num = document.createElement("div");
+    num.className = "num";
+    num.style.width = num.style.height = NOTCH_S + "px";
+    num.appendChild(document.createElement("span")); // 文字包一层，量宽用
+    n.appendChild(num);
+
+    document.querySelector(".card").appendChild(n);
+    return { el:n, num };
+  });
+
+  /* 缺口文字「尽可能大」：探针字号量一次实际宽度，再按内框宽度反推字号，上限即内框宽 */
+  const NOTCH_PROBE = 40;
+  function fitNotch(n){
+    const box = n.querySelector(".num"), t = box.firstElementChild;
+    box.style.fontSize = NOTCH_PROBE + "px";
+    const w = t.getBoundingClientRect().width;
+    const fs = w > 0 ? Math.min(NOTCH_INNER, NOTCH_PROBE * NOTCH_INNER / w) : NOTCH_PROBE;
+    box.style.fontSize = fs.toFixed(1) + "px";
+  }
+
+  rowBot.style.top = BOT_BASE + "px";          // 基线固定在最底边，下组从这里长出
+  star.style.top   = PAD_V + "px";             // 星标贴住上下留白，两种形态同一位置
+
   function compose(z, s){                    // 合成规则：差值 ≤1 折叠单数字，≥2 主旨位在前
     return Math.abs(z - s) <= 1 ? "" + Math.max(z, s) : "" + z + s;
   }
 
-  // 立柱：top 行向上生长（数字靠柱顶），bot 行向下生长（数字靠柱底，镜像）
-  function setPills(list, onIndex, g, mirrored){
+  // 立柱：top 行自柱顶向下生长（数字靠柱顶）；bot 行自基线向上长出（数字靠底端，镜像）
+  // grow=false 时高度收为 0：配合 overflow:hidden，即「长出去 / 收回来」
+  // bot 行的 bottom 是长出后的上移量：长柱为 0（一路伸到位），短柱为 ha−hi（够长后整根上移，顶端齐平）
+  function setPills(list, onIndex, g, mirrored, grow){
     list.forEach((p, i) => {
-      const h = i === onIndex ? g.ha : g.hi;
+      const h = grow ? (i === onIndex ? g.ha : g.hi) : 0;
       const pad = Math.max(0, h - DIGIT_INSET);
+      p.style.background = (grow && i === onIndex) ? COLORS[i] : rgba(COLORS[i], DIM_A);
       p.style.height = h + "px";
       p.style.paddingTop    = mirrored ? pad + "px" : "0px";
       p.style.paddingBottom = mirrored ? "0px" : pad + "px";
+      if (mirrored) p.style.bottom = +(grow ? g.ha - h : 0).toFixed(1) + "px";
     });
   }
 
@@ -224,22 +372,27 @@
     const g = two ? G2 : G1;
     const folded = Math.max(Z, S);
 
-    chart.style.setProperty("--row-bottom", g.rowBottom + "px");
-    rowBot.style.display = two ? "block" : "none";
-    rowBot.style.setProperty("--row-bot-top", g.rowBotTop + "px");
+    // 柱底、轴标签、柱高共用同一时长与曲线，保证边缘与文字同步位移
+    rowTop.style.bottom = g.rowBottom + "px";
     labs.forEach(l => l.style.top = g.labTop + "px");
 
-    setPills(topPills, two ? Z : folded, g, false);              // 上组：主旨位（单数字时为折叠值）
-    if (two) setPills(botPills, S, g, true);                     // 下组：实现位，镜像
+    setPills(topPills, two ? Z : folded, g, false, true);         // 上组：主旨位（单数字时为折叠值）
+    setPills(botPills, S, g, true, two);                          // 下组：实现位，镜像；单数字时收为 0
 
     const anchor = two ? Z : folded;        // 星标始终在上组伸长的那根柱子上
-    star.style.top = g.starTop + "px";
-    star.style.left = (STAR_CENTER0 + anchor * (PILL_W + GAP) - 14) + "px";
-    star.style.display = aiTheme ? "block" : "none";
+    star.style.left = +(X0 + anchor * (W1 + GAP) + W1 / 2 - 0.5 - 14).toFixed(2) + "px";
+    star.classList.toggle("off", !aiTheme);      // 靠 transform 收放，不用 display（无法过渡）
     starPath.setAttribute("fill", COLORS[anchor]);
 
-    document.getElementById("code").textContent =
-      "IIIA" + compose(Z, S) + (aiTheme ? "*" : "");
+    const code = compose(Z, S) + (aiTheme ? "*" : "");
+    const side = anchor <= 2 ? 1 : 0;            // 0/1/2 → 右上缺口，3/4/5 → 左上缺口
+    notches.forEach((o, i) => {
+      o.el.classList.toggle("off", i !== side);
+      o.num.firstElementChild.textContent = code;
+      fitNotch(o.el);
+    });
+
+    document.getElementById("code").textContent = "IIIA" + code;
 
     document.getElementById("descZ").innerHTML = "<b>Z" + Z + "</b>" + DESC_Z[Z];
     document.getElementById("descS").innerHTML = "<b>S" + S + "</b>" + DESC_S[S];
