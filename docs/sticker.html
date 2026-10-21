@@ -10,9 +10,23 @@
     --fs-title:50px;              /* 标题字号；缺口里的代码跟它同字号 */
     --ls-title:2px;               /* 标题字距。0 = 字体自然字距；2px ≈ 0.04em，展示排印的常规加空 */
 
-    /* 贴纸 500 × 400 = 5:4 整比。标题带高决定标题上下的呼吸，白卡高度由剩下的空间推导：
+    /* 贴纸基准尺寸：500 × 400 = 5:4 整比。标题带高决定标题上下的呼吸，白卡高度由剩下的空间推导：
        400 − 标题带 − 10（蓝框下边）——改标题带，柱区会自动让位 */
+    --base-h:400px;
+    --frame-w:10px;               /* 卡片外留的蓝框宽度 */
     --head-h:84px;
+
+    /* 说明项：卡下那条蓝边加高到 10 + 50，贴纸随之长成 500 × 450 = 5:4.5
+       取 50 是为了让白卡高度（450 − 84 − 60 = 306）与 5:4 时完全一致，
+       柱区、缺口、轴标签全部原地不动，切尺寸时里面的构图不会抖 */
+    --foot-h:50px;
+    --fs-url:22px;                /* 网址字号：等宽字每个字宽 0.6em，27 字 × 0.6 × 22 ≈ 371px，两侧各余 64 */
+    --ls-url:.5px;
+
+    /* 网址专用的等宽字族：URL 是给人抄的、也常被人当代码读，必须用编程等宽体。
+       前三个是各系统的系统等宽（ui-monospace → SF Mono → Menlo），没有再退到 Consolas / Liberation Mono。
+       带空格的家族名必须加引号，否则 CSS 解析会把它当成多个家族名 */
+    --font-mono:ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
     /* 面板控件模数：一格 = 一个 0–5 数字按钮的边长。主题选项按三格宽排版，
        三行控件的右缘与主题的中缝都由这一个数决定，改这里整体缩放 */
@@ -53,11 +67,13 @@
   }
   h1{ font-size:16px; font-weight:var(--w-label); margin:0; color:#555; }
 
-  /* ===== 贴纸本体（500×400，坐标对齐原 SVG） =====
+  /* ===== 贴纸本体（500×400，开说明项则 500×450；坐标对齐原 SVG） =====
      深色版只换「黑白」这一层：卡片底、轴标签字色、外框的深浅。
      外框蓝的色相（203°）与六档色阶一律不动，所以两个版本并排仍是同一套配色 */
   .sticker{
-    position:relative; width:500px; height:400px;
+    position:relative; width:500px;
+    --foot:0px;                          /* 说明项条带高度，0 = 5:4；由 .has-url 打开 */
+    height:calc(var(--base-h) + var(--foot));
     --frame:var(--blue);
     --card:#fff;
     --ink:#0b0c0e;
@@ -65,8 +81,10 @@
     border-radius:30px;
     overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,.12);
-    transition:background-color var(--dur) var(--ease);
+    transition:height var(--dur) var(--ease),
+               background-color var(--dur) var(--ease);
   }
+  .sticker.has-url{ --foot:var(--foot-h); }
   /* 深色：外框压到同一色相的深蓝（203°, 65%, 22%），卡片转近黑，轴标签转浅灰 */
   .sticker.dark{
     --frame:#14435e;
@@ -85,10 +103,39 @@
     padding-bottom:3.7px;
   }
   .card{
-    position:absolute; left:10px; right:10px; top:var(--head-h); bottom:10px;
+    position:absolute; left:var(--frame-w); right:var(--frame-w); top:var(--head-h);
+    bottom:calc(var(--frame-w) + var(--foot));
     background:var(--card); border-radius:26px;
-    transition:background-color var(--dur) var(--ease);
+    transition:bottom var(--dur) var(--ease),
+               background-color var(--dur) var(--ease);
   }
+
+  /* 说明项（网址）：盒子由 top / bottom 两条边定出，所以它的上沿永远钉在卡片下沿那条线上
+     ——那条线的位置 = 贴纸基准高 400 − 蓝框 10 = 390，与 --foot 无关：贴纸高和卡片下边按同一
+     系数联动，这条边从头到尾不位移。盒子下沿跟着贴纸底边走，展开时自上而下把内容「露」出来
+     网址本身装在固定 60 高的内层、顶边对齐这条线 —— 展开收起期间文字一步不动，只有它在动画。
+     （早前的写法是把文字居中在盒子正中：盒子 10↔60 地变，中心会平移 25px，
+       文字被拖着一起走动，就是那个闪跳。位置锚在不动的上沿，就没这回事了）
+     出场时序也分开：先让高度走完（--dur），网址再淡入（延迟 .2s 起步），
+     否则暴露到一半就被上层盒子裁掉；收起时立刻淡出，赶在裁切追上来之前走完 */
+  .urlband{
+    position:absolute; left:0; right:0;
+    top:calc(var(--base-h) - var(--frame-w)); bottom:0;
+    overflow:hidden;
+    opacity:0;
+    transition:opacity .18s var(--ease);
+  }
+  .urlband > span{
+    position:absolute; left:0; right:0; top:0;
+    height:calc(var(--frame-w) + var(--foot-h));   /* 恒取展开后的高度，不跟 --foot 联动 */
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+    font-family:var(--font-mono);
+    font-size:var(--fs-url); font-weight:var(--w-label);
+    letter-spacing:var(--ls-url);
+    padding-left:calc(var(--ls-url) / 2);   /* 末字后的字距会把整行带偏半个字距，补回来 */
+  }
+  .sticker.has-url .urlband{ opacity:1; transition:opacity .18s var(--ease) .2s; }
 
   /* 柱状区：上下两组关于「人工制作—自动生成」轴镜像
      上下留白取 25，与柱组的左右留白（左 25 / 右 24.4）对齐
@@ -220,6 +267,9 @@
   .seg label.t0 input:checked + span:hover{ background:#f9a668; }
   .seg label.t5 input:checked + span{ background:var(--c5); border-color:var(--c5); color:#fff; }
   .seg label.t5 input:checked + span:hover{ background:#3f5df0; }
+  /* 说明项这一行不借档位色（会被读成某个等级的快捷方式），用与下载按钮同源的石板灰 */
+  .seg label.n input:checked + span{ background:#2b3138; border-color:#2b3138; color:#fff; }
+  .seg label.n input:checked + span:hover{ background:#1d2127; }
   .seg input:focus-visible + span,
   .btns button:focus-visible{ outline:2px solid #4d6bfe; outline-offset:1px; }
 
@@ -333,6 +383,7 @@
     <div class="lab left">人工制作</div>
     <div class="lab right">自动生成</div>
   </div>
+  <div class="urlband" id="urlBand"><span id="urlText">ersansan233.github.io/IIIA</span></div>
 </div>
 
 <div class="panel">
@@ -363,6 +414,17 @@
     <div class="btns" id="sBtns"></div>
   </div>
 
+  <div class="step-block">
+    <div class="step-head">
+      <span class="step">4</span>
+      <span class="step-name">说明项</span>
+    </div>
+    <div class="seg" id="urlSeg">
+      <label class="n"><input type="radio" name="url" value="0" checked><span>无</span></label>
+      <label class="n"><input type="radio" name="url" value="1"><span>添加网址</span></label>
+    </div>
+  </div>
+
   <div class="foot">
     <button class="mode-btn" id="darkToggle" aria-pressed="false">深色模式关</button>
     <button class="dl-btn" id="downloadBtn">下载 IIIA5 贴纸</button>
@@ -380,18 +442,21 @@
   const GAP = 11.24, X0 = 25;                          // 卡片内坐标：首列 x=25，列距 73.64
   const W1 = 62.4;                                     // 柱宽恒定，6 根总宽 430.6，左右留白各 25 / 24.4
   let Z = 5, S = 5, aiTheme = false;
+  let withUrl = false;                                 // 说明项：true → 卡下加网址条，贴纸变 500×450
   let currentCode = "5";                               // 当前完整代码（含星号），导出文件名用
 
-  /* URL 参数预置（供官网「打开贴纸生成器」直达）：sticker.html?level=24* 或 5
-     一位数按折叠值处理（Z = S = 该数字），带 * 即开 AI 主题 */
+  /* URL 参数预置（供官网「打开贴纸生成器」直达）：
+     sticker.html?level=24* 或 5，一位数按折叠值处理（Z = S = 该数字），带 * 即开 AI 主题
+     url=1 直接开说明项 */
   {
-    const m = String(new URLSearchParams(location.search).get("level") || "")
-      .match(/^([0-5])([0-5]?)(\*?)$/);
+    const q = new URLSearchParams(location.search);
+    const m = String(q.get("level") || "").match(/^([0-5])([0-5]?)(\*?)$/);
     if (m){
       if (m[2] !== "") { Z = +m[1]; S = +m[2]; }
       else { Z = S = +m[1]; }
       aiTheme = m[3] === "*";
     }
+    withUrl = q.get("url") === "1";
   }
 
   /* 几何（卡片内坐标）——全部由上下留白 PAD_V 推导，调一处即可整体缩放
@@ -400,11 +465,15 @@
      柱顶恒为 61（星标 25–52 + 间隙 9），星标区在两种形态下完全静止，切换时只有柱底与轴标签移动
      G1 单数字：激活柱 189.7 + 间隙 7.3 + 轴标签 23
      G2 两位数：上柱 95.5 + 轴带 29 + 下柱 95.5，两组关于轴心 171 镜像 */
-  const STICKER_H = 400;                              // 贴纸总高，宽 500 → 5:4
-  const FRAME     = 10;                               // 卡片外留的蓝框宽度
-  const HEAD_H    = parseFloat(getComputedStyle(document.documentElement)
-                      .getPropertyValue("--head-h")); // 标题带高，唯一来源在 CSS
-  const CARD_H    = STICKER_H - HEAD_H - FRAME;       // 306
+  const rootCS   = getComputedStyle(document.documentElement);   // 尺寸常量的唯一来源都在 CSS
+  const BASE_H   = parseFloat(rootCS.getPropertyValue("--base-h"));   // 贴纸基准高 5:4 → 400
+  const FOOT_H   = parseFloat(rootCS.getPropertyValue("--foot-h"));   // 说明项条带高
+  const FRAME    = parseFloat(rootCS.getPropertyValue("--frame-w"));  // 卡片外留的蓝框宽度
+  const HEAD_H   = parseFloat(rootCS.getPropertyValue("--head-h"));   // 标题带高
+  const stickerH = () => BASE_H + (withUrl ? FOOT_H : 0);
+  /* 卡片高度按 5:4 的基准算，不随说明项变化——说明项长在卡片之外，
+     白卡始终是 306，切尺寸时柱区、缺口、轴标签一律原地不动 */
+  const CARD_H    = BASE_H - HEAD_H - FRAME;          // 306
 
   const PAD_V = 25;                                   // 卡片上下留白
   const STAR_H = 27, GAP_A = 9, GAP_B = 7.3, LAB_H = 23, BAND = 29;
@@ -446,6 +515,8 @@
   const star     = document.getElementById("star");
   const starPath = document.getElementById("starPath");
   const labs = document.querySelectorAll(".lab");
+  const urlBand = document.getElementById("urlBand");   // 说明项条带（只做裁剪与淡入淡出）
+  const urlText = document.getElementById("urlText");   // 网址文字本体：唯一来源，导出时连字体一起读它
 
   /* 数字定位基准 = 短柱高：pad = max(0, h − DIGIT_INSET)
      长柱 pad = h − 53.2（数字落在柱端往上 53.2 的区间内），短柱 pad = 0（整柱居中）
@@ -653,6 +724,16 @@
     r.checked = (r.value === "1") === aiTheme;   // ?level= 可能已改过默认值，控件状态要跟上
   });
 
+  /* 说明项：只切 CSS 变量 --foot（贴纸高、卡片下边、条带高都挂在它上面），
+     一次赋值三处联动；柱区几何不受影响，不必重排 */
+  const urlRadios = [...document.querySelectorAll("#urlSeg input")];
+  function applyUrl(){ stickerEl.classList.toggle("has-url", withUrl); }
+  urlRadios.forEach(r => {
+    r.onchange = e => { if (e.target.checked){ withUrl = e.target.value === "1"; applyUrl(); } };
+    r.checked = (r.value === "1") === withUrl;
+  });
+  applyUrl();
+
   render();
 
   /* 窄屏：贴纸本体内部坐标全是 px，直接整块 transform 缩放，省一套响应式坐标 */
@@ -676,8 +757,12 @@
 
   /* 导出 PNG：不用截图库（Chrome 会把含 foreignObject 的 SVG 画布整张污染，toBlob 直接报错），
      也不引第三方库（单文件要求）——贴纸本身全是简单几何，直接用 Canvas 按 render 的同一套
-     常量重绘一遍。颜色读自 computedStyle，深浅模式自动跟随；2 倍输出 1000×800 */
+     常量重绘一遍。颜色读自 computedStyle，深浅模式自动跟随；2 倍输出 1000×800（开说明项则 1000×900） */
   const FONT = '"Noto Sans CJK SC","Noto Sans SC","PingFang SC",sans-serif';
+  /* 网址的等宽栈：不写 ui-monospace——canvas 的 font 简写走 CSS 解析器，
+     不认的家族名会让整条赋值被丢弃、静默沿用上一个字体（那就不是等宽了）。
+     DOM 侧有 ui-monospace 打头，两端落到同一个字（macOS 是 SF Mono / Menlo，Windows 是 Consolas） */
+  const FONT_MONO = '"SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
   function pathRR(ctx, x, y, w, h, r){            // r = [tl, tr, br, bl]
     const [a, b, c, d] = r;
     ctx.beginPath();
@@ -700,19 +785,24 @@
     const dark = stickerEl.classList.contains("dark");
     const a = dark ? DIM_A_DARK : DIM_A;
 
+    const H = stickerH();                          // 450（开说明项）/ 400
     const cs = getComputedStyle(stickerEl);
     const frame = cs.backgroundColor;              // 深浅模式自动跟随 CSS
     const bg    = getComputedStyle(document.querySelector(".card")).backgroundColor;
     const ink   = getComputedStyle(document.querySelector(".lab")).color;
+    // 网址的字号、字重、字距一并从内层文字读（样式挂在它身上），改 CSS 时预览与出图不会走散
+    const ucs = getComputedStyle(urlText);
+    const uFs = parseFloat(ucs.fontSize);
+    const uLs = parseFloat(ucs.letterSpacing) || 0;
 
     const cv = document.createElement("canvas");
-    cv.width = 500 * SCALE; cv.height = 400 * SCALE;
+    cv.width = 500 * SCALE; cv.height = H * SCALE;
     const ctx = cv.getContext("2d");
     ctx.scale(SCALE, SCALE);
     ctx.textBaseline = "middle";
 
     // 外框 + 标题
-    pathRR(ctx, 0, 0, 500, 400, [30,30,30,30]);
+    pathRR(ctx, 0, 0, 500, H, [30,30,30,30]);
     ctx.fillStyle = frame; ctx.fill();
     ctx.fillStyle = "#fff"; ctx.textAlign = "center";
     ctx.font = "700 50px " + FONT;
@@ -722,8 +812,8 @@
     ctx.fillText("人工智能参与指数", 250 + (hasLS ? 1 : 0), HEAD_H / 2 + 1.84);
     if (hasLS) ctx.letterSpacing = "0px";
 
-    // 白卡（深色版即黑卡）
-    pathRR(ctx, 10, HEAD_H, 480, 400 - 10 - HEAD_H, [26,26,26,26]);
+    // 白卡（深色版即黑卡）：高度恒为 306，说明项长在它下面，不侵占卡内空间
+    pathRR(ctx, 10, HEAD_H, 480, CARD_H, [26,26,26,26]);
     ctx.fillStyle = bg; ctx.fill();
 
     // 柱：上组自基线向上长，下组顶端对齐后向下长；数字位置与 DOM 的 padding 逻辑一致
@@ -770,6 +860,16 @@
     ctx.fillText("人工制作", 10 + 20, HEAD_H + g.labTop + 11.5);
     ctx.textAlign = "right";
     ctx.fillText("自动生成", 10 + 480 - 20, HEAD_H + g.labTop + 11.5);
+
+    // 说明项网址：居中于「卡片下沿—贴纸下沿」的整条蓝边，与 DOM 的 urlband 同一区间
+    // 拉丁文升部降部本就接近配平（不像标题的 CJK 要靠 padding 压），这里不做光学修正
+    if (withUrl){
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+      ctx.font = ucs.fontWeight + " " + uFs + "px " + FONT_MONO;
+      if (hasLS) ctx.letterSpacing = uLs + "px";
+      ctx.fillText(urlText.textContent, 250 + uLs / 2, H - (FRAME + FOOT_H) / 2);
+      if (hasLS) ctx.letterSpacing = "0px";
+    }
 
     return new Promise(res => cv.toBlob(res, "image/png"));
   }
