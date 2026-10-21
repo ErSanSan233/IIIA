@@ -760,7 +760,7 @@
                         <li><a href="#levels">等级说明</a></li>
                         <li><a href="#chat">指数评估</a></li>
                         <li><a href="#resources">资源下载</a></li>
-                        <li><a href="#icons">贴纸预览</a></li>
+                        <li><a href="#icons">贴纸生成</a></li>
                     </ul>
                 </nav>
             </div>
@@ -881,18 +881,15 @@
             <div id="result-section" class="result-section">
                 <h3 class="result-title">您的视频AI参与指数</h3>
                 <div class="result-content">
-                    <div class="result-icon-container">
-                        <img id="result-icon" class="result-icon" src="" alt="AI参与指数贴纸">
-                    </div>
                     <div class="result-details">
                         <div class="result-index" id="result-index"></div>
                         <div class="result-description" id="result-description"></div>
-                        <p style="margin-bottom: 20px; font-weight: 500; font-size: 1.1rem;">贴纸可直接 <strong>下载</strong> 使用：</p>
+                        <p style="margin-bottom: 20px; font-weight: 500; font-size: 1.1rem;">需要对应等级的贴纸？<strong>网页生成器</strong>可以直接出图：</p>
                         <div class="result-actions">
-                            <button class="action-button" id="download-icon">
-                                <i class="fas fa-download"></i>
-                                下载贴纸
-                            </button>
+                            <a class="action-button" id="open-sticker" href="sticker.html" target="_blank" rel="noopener">
+                                <i class="fas fa-pen-nib"></i>
+                                打开贴纸生成器
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -918,12 +915,17 @@
         </div>
     </section>
 
-    <!-- 新增的贴纸预览区域 -->
+    <!-- 贴纸生成入口（贴纸不再以位图形式存放在仓库中） -->
     <section id="icons" class="icons-preview-section">
         <div class="container">
-            <h2 class="icons-preview-title">贴纸预览</h2>
-            <div class="icons-container">
-                <!-- 贴纸将通过JS动态生成 -->
+            <h2 class="icons-preview-title">贴纸生成</h2>
+            <div style="background:#f5f7fa;border-radius:12px;padding:28px 24px;text-align:center;max-width:640px;margin:0 auto;">
+                <p style="margin:0 0 6px;font-weight:600;font-size:1.05rem;">IIIA 贴纸已改为单文件网页生成器</p>
+                <p style="margin:0 0 18px;color:#555;font-size:.95rem;">选择主旨思路（Z）与实现过程（S）的等级，实时生成单数字或两位数贴纸，支持 AI 主题星标。</p>
+                <a class="action-button" href="sticker.html" target="_blank" rel="noopener">
+                    <i class="fas fa-pen-nib"></i>
+                    打开贴纸生成器
+                </a>
             </div>
         </div>
     </section>
@@ -957,37 +959,8 @@
         });
 
         
-        // 贴纸资源
-        const iconBaseURLs = {
-            "0": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B80.png",
-            "1": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B81.png",
-            "2": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B82.png",
-            "3": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B83.png",
-            "4": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B84.png",
-            "5": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B85.png",
-            "0*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B80-star.png",
-            "1*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B81-star.png",
-            "2*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B82-star.png",
-            "3*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B83-star.png",
-            "4*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B84-star.png",
-            "5*": "https://raw.githubusercontent.com/ErSanSan233/IIIA/main/%E8%B4%B4%E7%BA%B8/%E8%B4%B4%E7%BA%B85-star.png"
-        };
-
-        // 等级描述
-        const levelDescriptions = {
-            "0": "完全未使用AI",
-            "1": "AI仅提供参考，未参与制作",
-            "2": "人类主导，AI用于提升效果",
-            "3": "人类审核过视频全部内容",
-            "4": "存在未经人类审核的内容",
-            "5": "完全由AI制作",
-            "0*": "完全未使用AI + AI主题",
-            "1*": "AI仅提供参考 + AI主题",
-            "2*": "人类主导 + AI主题",
-            "3*": "人类审核过内容 + AI主题",
-            "4*": "有未经审核内容 + AI主题",
-            "5*": "完全AI制作 + AI主题"
-        };
+        // 贴纸生成器入口（单文件网页，贴纸不再以位图形式存放）
+        const STICKER_URL = "sticker.html";
 
         // 系统提示词
         const systemPrompt = `助手是由 IIIA(Indice d'implication de l'intelligence artificielle)AI参与指数相关贡献者创建的IIIA-AI。
@@ -1039,11 +1012,9 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
         const sendText = document.getElementById('send-text');
         const loadingIndicator = document.getElementById('loading-indicator');
         const resultSection = document.getElementById('result-section');
-        const resultIcon = document.getElementById('result-icon');
         const resultIndex = document.getElementById('result-index');
         const resultDescription = document.getElementById('result-description');
-        const downloadIconBtn = document.getElementById('download-icon');
-        const iconsContainer = document.querySelector('.icons-container');
+        const openStickerBtn = document.getElementById('open-sticker');
         
         // 对话历史
         let messages = [
@@ -1176,11 +1147,11 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
             if (match) {
                 const level = match[1];
                 const description = match[2].trim();
-                
-                // 显示结果
-                resultIcon.src = iconBaseURLs[level];
+
+                // 显示结果；贴纸改由生成器按等级参数实时出图
                 resultIndex.textContent = `IIIA: ${level}级`;
                 resultDescription.textContent = description;
+                openStickerBtn.href = `${STICKER_URL}?level=${encodeURIComponent(level)}`;
                 resultSection.style.display = 'block';
                 
                 // 滚动到结果区域
@@ -1217,31 +1188,7 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
         });
 
 
-        // 下载贴纸
-        downloadIconBtn.addEventListener('click', async function() {
-            // 获取图片的 URL
-            const url = resultIcon.src;
-            // 生成文件名
-            const filename = `IIIA-${resultIndex.textContent.replace(':', '').trim()}.png`;
-            try {
-                // 使用 fetch 获取图片数据
-                const response = await fetch(url, { mode: 'cors' });
-                // 转为 Blob
-                const blob = await response.blob();
-                // 创建临时链接并下载
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                // 释放 URL 对象
-                URL.revokeObjectURL(a.href);
-            } catch (err) {
-                alert('图片下载失败');
-                console.error(err);
-            }
-        });
+        // 下载贴纸的逻辑已随位图资源一起移除，贴纸统一由 sticker.html 生成
 
         // 监听滚动到聊天区域
         const chatSection = document.getElementById('chat');
@@ -1270,65 +1217,6 @@ IIIA-AI 喜欢且擅长遵循指令，输出符合格式的html标签。`;
             });
         });
 
-        // 生成贴纸预览
-        function generateIconPreviews() {
-            const levels = ['0', '1', '2', '3', '4', '5', '0*', '1*', '2*', '3*', '4*', '5*'];
-            
-            levels.forEach(level => {
-                const iconCard = document.createElement('div');
-                iconCard.className = 'icon-card';
-                
-                const iconImg = document.createElement('img');
-                iconImg.className = 'icon-preview';
-                iconImg.src = iconBaseURLs[level];
-                iconImg.alt = `IIIA ${level}级贴纸`;
-                
-                const iconName = document.createElement('div');
-                iconName.className = 'icon-name';
-                iconName.textContent = `IIIA: ${level}级`;
-                
-                const iconLevel = document.createElement('div');
-                iconLevel.className = 'icon-level';
-                iconLevel.textContent = levelDescriptions[level];
-                
-                const iconActions = document.createElement('div');
-                iconActions.className = 'icon-actions';
-                
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'icon-action-btn';
-                downloadBtn.innerHTML = '<i class="fas fa-download"></i> 下载';
-                downloadBtn.onclick = () => downloadIcon(iconImg.src, `IIIA-${level}.png`);
-                
-                iconActions.appendChild(downloadBtn);
-                
-                iconCard.appendChild(iconImg);
-                iconCard.appendChild(iconName);
-                iconCard.appendChild(iconLevel);
-                iconCard.appendChild(iconActions);
-                
-                iconsContainer.appendChild(iconCard);
-            });
-        }
-        generateIconPreviews()
-
-        // 下载贴纸
-        async function downloadIcon(url, filename) {
-            try {
-                const response = await fetch(url, { mode: 'cors' });
-                const blob = await response.blob();
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(a.href);
-            } catch (err) {
-                alert('图片下载失败');
-                console.error(err);
-            }
-        }
-        
     </script>
 </body>
 </html>

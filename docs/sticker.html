@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IIIA 参与指数贴纸 · 生成器</title>
+<style>
+  :root{
+    --blue:#41b0f6;
+    --fs-title:50px;              /* 标题字号；缺口里的代码跟它同字号 */
+    --ls-title:2px;               /* 标题字距。0 = 字体自然字距；2px ≈ 0.04em，展示排印的常规加空 */
+
+    /* 贴纸 500 × 400 = 5:4 整比。标题带高决定标题上下的呼吸，白卡高度由剩下的空间推导：
+       400 − 标题带 − 10（蓝框下边）——改标题带，柱区会自动让位 */
+    --head-h:84px;
+
+    /* 面板控件模数：一格 = 一个 0–5 数字按钮的边长。主题选项按三格宽排版，
+       三行控件的右缘与主题的中缝都由这一个数决定，改这里整体缩放 */
+    --cell:36px;
+    --cell-gap:6px;
+
+    /* 打分行：选中档的宽度，要装得下「档位N·六字档名」（15px 下约 138px，留一点余量）。
+       其余五档均分剩下的宽度，整条铺满面板，所以换档时行宽不动 */
+    --rate-on:156px;
+
+    /* 字族统一到 Noto Sans CJK SC（本机装了 7 档：100 / 300 / 350 / 400 / 500 / 700 / 900，
+       且全部注册在同一个家族名下，font-weight 能直接选到对应档） */
+    --font:"Noto Sans CJK SC","Noto Sans SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+
+    /* 字重只用 400 / 500 / 700 三档，按「尺寸越大越不必加粗」分配：
+       · 700 白字压蓝底：标题 50px、柱内数字 30px、缺口代码。实测墨量 34075 像素，旧版普惠体 700 为 34257，
+         差 0.5%——换字族不改观感；白字在饱和底色上本来就要靠笔画实度撑住
+       · 500 黑字白底：轴标签 19px、面板行标题。黑字对比度已经够，上 700 会和柱内数字抢视线
+       · 400 面板正文与说明文字，长段落保持常规
+       不写 600：本家族没有 600 档，浏览器按规则会落到 700，写 600 等于白写 */
+    --w-display:700;
+    --w-digit:700;
+    --w-label:500;
+    --w-ui:400;
+    --w-strong:700;
+
+    --c0:#fbb47e; --c1:#d39390; --c2:#b660a8; --c3:#b84ccc; --c4:#8e61e5; --c5:#4d6bfe;
+    --dur:.32s;
+    --ease:cubic-bezier(.4,0,.2,1);
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:36px 24px 60px;
+    background:#eef0f4;
+    font-family:var(--font);
+    display:flex; flex-direction:column; align-items:center; gap:28px;
+    color:#333;
+  }
+  h1{ font-size:16px; font-weight:var(--w-label); margin:0; color:#555; }
+
+  /* ===== 贴纸本体（500×400，坐标对齐原 SVG） =====
+     深色版只换「黑白」这一层：卡片底、轴标签字色、外框的深浅。
+     外框蓝的色相（203°）与六档色阶一律不动，所以两个版本并排仍是同一套配色 */
+  .sticker{
+    position:relative; width:500px; height:400px;
+    --frame:var(--blue);
+    --card:#fff;
+    --ink:#0b0c0e;
+    background:var(--frame);
+    border-radius:30px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+    transition:background-color var(--dur) var(--ease);
+  }
+  /* 深色：外框压到同一色相的深蓝（203°, 65%, 22%），卡片转近黑，轴标签转浅灰 */
+  .sticker.dark{
+    --frame:#14435e;
+    --card:#12151a;
+    --ink:#e8ebf1;
+  }
+  .header{
+    position:absolute; top:0; left:0; right:0; height:var(--head-h);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:var(--fs-title); font-weight:var(--w-display);
+    letter-spacing:var(--ls-title);
+    /* CSS 的字距会加在末字之后，flex 居中会把整行向左带偏 ls/2，补一半抵消 */
+    padding-left:calc(var(--ls-title) / 2);
+    /* 配平上下留白：Noto CJK 升部(1.16em) > 降部(0.288em)，墨心比行盒中心低 1.84px（50px 时），
+       padding-bottom 压上 1.84px 让墨心回到带子正中——实测上下留白各 11.2px */
+    padding-bottom:3.7px;
+  }
+  .card{
+    position:absolute; left:10px; right:10px; top:var(--head-h); bottom:10px;
+    background:var(--card); border-radius:26px;
+    transition:background-color var(--dur) var(--ease);
+  }
+
+  /* 柱状区：上下两组关于「人工制作—自动生成」轴镜像
+     上下留白取 25，与柱组的左右留白（左 25 / 右 24.4）对齐
+     以下数值为 G1 形态的首帧占位，render() 会按 PAD_V 推导后覆盖 */
+  .chart{ position:absolute; inset:0; }
+  .row{ position:absolute; left:0; right:0; }
+  .row.top{ bottom:55.3px; transition:bottom var(--dur) var(--ease); }
+  .row.bot{ top:281px; }                            /* 下组生长基线：内容块底边，远离轴带 */
+
+  .pill{
+    position:absolute; width:62.4px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:30px; font-weight:var(--w-digit);
+    overflow:hidden;
+    transition:height var(--dur) var(--ease),
+               padding-top var(--dur) var(--ease),
+               padding-bottom var(--dur) var(--ease),
+               bottom var(--dur) var(--ease),
+               background-color var(--dur) var(--ease);
+  }
+  .row.top .pill{ bottom:0; border-radius:21px 21px 10px 10px; }
+  /* 镜像：圆头在下。bottom 由 JS 给出「长出后整体上移」的位移量 */
+  .row.bot .pill{ bottom:0; border-radius:10px 10px 21px 21px; }
+
+  /* 星标纵向位置在两种形态下恒定，只有横向平移参与过渡
+     出现/消失：缩放 0↔1 + 旋转 −120°↔0，统一走 --dur / --ease 缓出 */
+  .star{
+    position:absolute; top:25px; left:409.9px; width:28px; height:27px;
+    transform-origin:50% 50%;
+    transition:left var(--dur) var(--ease),
+               transform var(--dur) var(--ease),
+               opacity calc(var(--dur) * .6) var(--ease);
+  }
+  .star.off{
+    transform:scale(0) rotate(-120deg); opacity:0;
+  }
+
+  /* 指数缺口：白底在角落被「咬」掉一块矩形（宽到同侧第二根彩条的远边缘，高由两行彩条间距决定），
+     露出外框蓝底，数字用白色反白
+     做法是叠一块同色蓝——外框底色是纯蓝，与真镂空像素级一致，
+     且能盖掉卡片自己的圆角，缺口外沿才是直的（卡片没有 overflow:hidden，不会被裁）
+     形状必须用 SVG path 画，border-radius 做不到：圆角有归属问题
+       · 缺口内角（靠近卡心那个）—— 圆角归蓝底，即普通倒圆角，白鼓进来
+       · 缺口与卡片两条边相接的两个角 —— 圆角必须归白底，蓝要向外鼓出 r
+         若把圆角判给蓝底（给方块倒圆角），白底会被挤成一根渐细到 0 的发丝（尖尖）：
+         缺口左边缘本来就与卡片左边缘重合、蓝蓝相接，白没有容身之处
+         反过来鼓出后，渐细的那根刺是蓝色、融进卡片外的底色里，看不见
+       · 贴着卡角的那一角保持方角：那里已是卡片之外，倒圆会露出白边 */
+  .notch{
+    position:absolute; top:0;
+    transition:transform var(--dur) var(--ease),
+               opacity calc(var(--dur) * .6) var(--ease);
+  }
+  .notch.left { left:0;  transform-origin:0 0; }
+  .notch.right{ right:0; transform-origin:100% 0; }
+  .notch.off  { transform:scale(0); opacity:0; }
+  .notch svg  { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .notch path { fill:var(--frame); transition:fill var(--dur) var(--ease); }
+  .notch .num{
+    position:absolute; top:0;                 /* 数字居中于缺口的实心区 */
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:var(--fs-title); font-weight:var(--w-display); line-height:1;
+  }
+  .notch.left .num { left:0; }
+  .notch.right .num{ right:0; }
+
+  /* 外沿补 2px 蓝：缺口外边缘正好压在卡片边缘上，位置非整数时浏览器会把这一列
+     和卡片白底混色，1x 下就显出一条极细的浅缝（放大消失）。补一条同色条盖住边界即可，
+     两侧都是 #41b0f6，看不出来。高度只补到缺口底边（--notch-fill-h），保留底部圆角 */
+  .notch::after{
+    content:""; position:absolute; top:0;
+    width:2px; height:var(--notch-fill-h);
+    background:var(--frame);
+    transition:background-color var(--dur) var(--ease);
+  }
+  .notch.left::after { left:-1px; }
+  .notch.right::after{ right:-1px; }
+
+  .lab{
+    position:absolute; top:258px;
+    font-size:19px; font-weight:var(--w-label); color:var(--ink); line-height:23px;
+    transition:top var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  .lab.left{ left:20px; }
+  .lab.right{ right:20px; }
+
+  /* ===== 控制面板 =====
+     一段话原则：面板主体只有三行决定 + 一行结果，所有解释收进页尾可折叠的「说明」 */
+  .panel{
+    width:500px; max-width:calc(100vw - 48px);   /* 与 body 左右 padding 一致，窄屏不吃出横向滚动 */
+    display:flex; flex-direction:column; gap:14px;
+    background:#fff; border-radius:14px; padding:16px 20px 14px;
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    font-size:14px; color:#333;
+  }
+
+  /* 每一行 = 小标题一行 + 整宽控件一行。档名要跟数字同字号，横向装不下，
+     索性让控件另起一行铺满面板宽度，标题与控件互不抢宽度 */
+  .step-block{ display:flex; flex-direction:column; gap:8px; }
+  .step-head{ display:flex; align-items:center; gap:8px; }
+  .step{
+    flex:none; width:18px; height:18px; border-radius:50%;
+    background:#eef1f6; color:#6b7480;
+    font-size:11px; font-weight:var(--w-strong);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step-name{ flex:none; font-size:14px; font-weight:var(--w-strong); }
+
+  /* 控件以「格」为模数，整条铺满面板内容宽度 */
+  .seg, .btns{ display:flex; gap:var(--cell-gap); width:100%; }
+  .seg label{ position:relative; display:block; flex:1; }
+  .seg input{ position:absolute; width:0; height:0; opacity:0; }
+
+  /* 主题与数字共用同一套盒子外观 */
+  .seg span, .btns button{
+    display:flex; align-items:center; justify-content:center;
+    width:100%; height:var(--cell);
+    border:1px solid #e2e6ee; border-radius:9px;
+    background:#f4f6fa; color:#5a6270;
+    font-family:inherit; font-size:15px; font-weight:var(--w-label);
+    white-space:nowrap; cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s, transform .1s;
+  }
+  .seg span:hover, .btns button:hover{ background:#e9edf4; }
+  .seg span:active, .btns button:active{ transform:scale(.96); }
+  /* 主题的选中色直接借用色阶两端：非 AI = 0 档的 c0，AI = 5 档的 c5。
+     和数字格一样「实色填充」，字色按同样规则取深/白 */
+  .seg label.t0 input:checked + span{ background:var(--c0); border-color:var(--c0); color:#2f3136; }
+  .seg label.t0 input:checked + span:hover{ background:#f9a668; }
+  .seg label.t5 input:checked + span{ background:var(--c5); border-color:var(--c5); color:#fff; }
+  .seg label.t5 input:checked + span:hover{ background:#3f5df0; }
+  .seg input:focus-visible + span,
+  .btns button:focus-visible{ outline:2px solid #4d6bfe; outline-offset:1px; }
+
+  /* 打分行：整条总宽不变，选中档加宽装下「数字·档名」，其余收窄只剩数字 */
+  .btns .pick{
+    position:relative; flex:none;
+    width:calc((100% - var(--rate-on) - var(--cell-gap) * 5) / 5);
+    transition:width .22s var(--ease);
+  }
+  .btns .pick.on{ width:var(--rate-on); }
+  /* 框还没长够时先裁掉文字，绝不甩到框外 */
+  .btns .pick > button{ padding:0; overflow:hidden; }
+  /* 「档位」二字和档名一起在选中框里展开；两者都用 max-width 跟随框长开，
+     框还没到位时先裁掉，不会甩到框外 */
+  .btns .k, .btns .t{
+    max-width:0; opacity:0; overflow:hidden;
+    transition:max-width .22s var(--ease), opacity .1s;
+  }
+  .btns .pick.on .k,
+  .btns .pick.on .t{
+    opacity:1;
+    transition:max-width .22s var(--ease), opacity .14s .12s;   /* 等框基本长开再显字 */
+  }
+  .btns .pick.on .k{ max-width:60px; }
+  .btns .pick.on .t{ max-width:220px; }
+
+  /* 悬停气泡：白底细描边，只报档名，不重复数字也不带颜色标记 */
+  .btns .tip{
+    position:absolute; bottom:calc(100% + 8px); left:50%; translate:-50% 4px;
+    padding:5px 9px; border-radius:7px;
+    background:#fff; color:#333; border:1px solid #e4e8f0;
+    box-shadow:0 6px 18px rgba(25,35,55,.13);
+    font-size:12.5px; font-weight:var(--w-ui);
+    white-space:nowrap; z-index:6;
+    opacity:0; pointer-events:none;
+    transition:opacity .14s, translate .14s;
+  }
+  .btns .tip::after{
+    content:""; position:absolute; top:100%; left:50%; margin-left:-4px;
+    width:8px; height:8px; background:#fff;
+    border-right:1px solid #e4e8f0; border-bottom:1px solid #e4e8f0;
+    transform:translateY(-4.5px) rotate(45deg);
+  }
+  .btns .pick:not(.on):hover .tip{ opacity:1; translate:-50% 0; }
+
+  /* 首尾两档的气泡贴边对齐，免得伸出面板 */
+  .btns .pick:first-child .tip{ left:0; translate:0 4px; }
+  .btns .pick:first-child .tip::after{ left:18px; }
+  .btns .pick:first-child:hover .tip{ translate:0 0; }
+  .btns .pick:last-child .tip{ left:auto; right:0; translate:0 4px; }
+  .btns .pick:last-child .tip::after{ left:auto; right:18px; }
+  .btns .pick:last-child:hover .tip{ translate:0 0; }
+
+  /* 窄屏：控件高度缩一档，档名跟着小一档 */
+  @media (max-width:440px){
+    :root{ --cell:32px; --cell-gap:5px; --rate-on:146px; }
+    .seg span, .btns button{ font-size:14px; }
+  }
+
+  /* 页脚：左「深色模式」按钮，右「下载贴纸」主按钮 */
+  .foot{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border-top:1px solid #eceef2; padding-top:12px;
+    font-size:13px; color:#8a919c;
+  }
+  .foot button{
+    font-family:inherit; cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s, transform .1s;
+  }
+  .foot button:active{ transform:scale(.98); }
+  .foot button:focus-visible{ outline:2px solid #4d6bfe; outline-offset:2px; }
+
+  /* 深色模式：按下去的按钮，不用拨动杆——它切换的是「整块贴纸的黑/白」，
+     按下态直接把按钮本身染成深色，本身就是预览 */
+  .mode-btn{
+    border:1px solid #e2e6ee; border-radius:9px; background:#f4f6fa;
+    padding:7px 12px; font-size:12.5px; font-weight:var(--w-label); color:#5a6270;
+  }
+  .mode-btn:hover{ background:#e9edf4; }
+  .mode-btn[aria-pressed="true"]{
+    background:#16191f; border-color:#16191f; color:#f2f4f8;
+  }
+  .mode-btn[aria-pressed="true"]:hover{ background:#0d0f13; }
+
+  /* 下载按钮用独立的石板灰：不能借用任何档位色（尤其 5 档的蓝），
+     否则按钮会被读成「5 档的快捷方式」，它只是个工具入口 */
+  .dl-btn{
+    border:1px solid #2b3138; border-radius:9px; background:#2b3138;
+    padding:8px 14px; font-size:13.5px; font-weight:var(--w-strong); color:#fff;
+  }
+  .dl-btn:hover{ background:#1d2127; border-color:#1d2127; }
+  .dl-btn:disabled{ opacity:.65; cursor:progress; }
+
+
+</style>
+</head>
+<body>
+
+<h1 hidden>IIIA 参与指数贴纸 · 生成器</h1>
+
+<div class="sticker">
+  <div class="header">人工智能参与指数</div>
+  <div class="card">
+    <div class="chart" id="chart">
+      <div class="row top" id="rowTop"></div>
+      <div class="row bot" id="rowBot"></div>
+      <svg class="star" id="star" viewBox="52.5 175 28 27" xmlns="http://www.w3.org/2000/svg">
+        <path id="starPath" fill="#4d6bfe" d="M 69.329 185.007 L 69.329 175.878 L 63.487 175.878 L 63.487 185.007 L 55.235 181.793 L 53.263 187.417 L 61.734 190.265 L 56.330 197.422 L 61.223 201 L 66.335 193.478 L 71.739 201 L 76.559 197.422 L 71.155 190.265 L 79.773 187.417 L 77.801 181.793 Z"/>
+      </svg>
+    </div>
+    <div class="lab left">人工制作</div>
+    <div class="lab right">自动生成</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="step-block">
+    <div class="step-head">
+      <span class="step">1</span>
+      <span class="step-name">作品主题</span>
+    </div>
+    <div class="seg" id="themeSeg">
+      <label class="t0"><input type="radio" name="theme" value="0" checked><span>非 AI 主题</span></label>
+      <label class="t5"><input type="radio" name="theme" value="1"><span>AI 主题</span></label>
+    </div>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head">
+      <span class="step">2</span>
+      <span class="step-name">主旨思路</span>
+    </div>
+    <div class="btns" id="zBtns"></div>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head">
+      <span class="step">3</span>
+      <span class="step-name">实现过程</span>
+    </div>
+    <div class="btns" id="sBtns"></div>
+  </div>
+
+  <div class="foot">
+    <button class="mode-btn" id="darkToggle" aria-pressed="false">深色模式关</button>
+    <button class="dl-btn" id="downloadBtn">下载 IIIA5 贴纸</button>
+  </div>
+</div>
+
+<script>
+  /* 档位短名：选中时连同「档位 N」一起写在加宽的框里，未选中时靠悬停气泡显示。
+     同一位置在两行里含义不同，所以两行各有一套：主旨说的是「是谁在想」，实现说的是「是谁在做」。
+     判定细则不放在页面里——面板只负责出标注，细则以 README 判定表为准 */
+  const LABEL_Z = ["无AI参与", "AI提供参考", "AI辅助创作", "人类全审查", "人类有限干预", "全AI"];
+  const LABEL_S = ["全手搓", "AI辅助灵感", "个别AI素材", "人类全审查", "人类有限干预", "全AI"];
+
+  const COLORS = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
+  const GAP = 11.24, X0 = 25;                          // 卡片内坐标：首列 x=25，列距 73.64
+  const W1 = 62.4;                                     // 柱宽恒定，6 根总宽 430.6，左右留白各 25 / 24.4
+  let Z = 5, S = 5, aiTheme = false;
+  let currentCode = "5";                               // 当前完整代码（含星号），导出文件名用
+
+  /* URL 参数预置（供官网「打开贴纸生成器」直达）：sticker.html?level=24* 或 5
+     一位数按折叠值处理（Z = S = 该数字），带 * 即开 AI 主题 */
+  {
+    const m = String(new URLSearchParams(location.search).get("level") || "")
+      .match(/^([0-5])([0-5]?)(\*?)$/);
+    if (m){
+      if (m[2] !== "") { Z = +m[1]; S = +m[2]; }
+      else { Z = S = +m[1]; }
+      aiTheme = m[3] === "*";
+    }
+  }
+
+  /* 几何（卡片内坐标）——全部由上下留白 PAD_V 推导，调一处即可整体缩放
+     卡片尺寸不写死：宽来自 CSS（500 − 10 × 2 = 480），高由「贴纸 400 − 标题带 − 蓝框 10」推出
+     上下留白取 25，与柱组左右留白（左 25 / 右 24.4）一致；内容块为 25…281
+     柱顶恒为 61（星标 25–52 + 间隙 9），星标区在两种形态下完全静止，切换时只有柱底与轴标签移动
+     G1 单数字：激活柱 189.7 + 间隙 7.3 + 轴标签 23
+     G2 两位数：上柱 95.5 + 轴带 29 + 下柱 95.5，两组关于轴心 171 镜像 */
+  const STICKER_H = 400;                              // 贴纸总高，宽 500 → 5:4
+  const FRAME     = 10;                               // 卡片外留的蓝框宽度
+  const HEAD_H    = parseFloat(getComputedStyle(document.documentElement)
+                      .getPropertyValue("--head-h")); // 标题带高，唯一来源在 CSS
+  const CARD_H    = STICKER_H - HEAD_H - FRAME;       // 306
+
+  const PAD_V = 25;                                   // 卡片上下留白
+  const STAR_H = 27, GAP_A = 9, GAP_B = 7.3, LAB_H = 23, BAND = 29;
+  const RATIO  = 71.7 / 128.7;                        // 非激活柱 / 激活柱，沿用原设计比例
+
+  const TOP_Y = PAD_V + STAR_H + GAP_A;               // 柱顶 61
+  const END_Y = CARD_H - PAD_V;                       // 内容块底 281
+
+  const G1_HA = END_Y - TOP_Y - GAP_B - LAB_H;        // 189.7
+  const G2_HA = (END_Y - TOP_Y - BAND) / 2;           // 95.5
+  const G2_MID = TOP_Y + G2_HA;                       // 上柱底 156.5
+
+  /* 短柱长度：以两位数形态（空间最紧者）定，两种形态统一取同一个值
+     一位数形态不再按自身比例放大——长柱 189.7 配短柱 105.6 会显得过于参差 */
+  const SHORT_H = +(G2_HA * RATIO).toFixed(1);        // 53.2
+
+  const G1 = { ha:+G1_HA.toFixed(1), hi:SHORT_H, rowBottom:+(CARD_H - (END_Y - GAP_B - LAB_H)).toFixed(1), labTop:END_Y - LAB_H };
+  const G2 = { ha:+G2_HA.toFixed(1), hi:SHORT_H, rowBottom:+(CARD_H - G2_MID).toFixed(1),                  labTop:G2_MID + (BAND - LAB_H) / 2 };
+  const BOT_BASE = END_Y;                             // 下组基线 281：柱子自最底边长出，再整体上移
+  // 长柱一路伸到顶端 G2_MID + BAND(185.5)；短柱只长 hi，故需上移 ha−hi 才能同样齐平于 185.5
+
+  /* 指数缺口：自卡片顶角起算的矩形。宽高分开定
+     宽 = 自卡片边沿一直盖到「同侧第二根彩条的远边缘」：
+       左上缺口 → 1 号柱右缘（25 + 62.4 + 11.24 + 62.4 = 161.04）
+       右上缺口 → 4 号柱左缘（480 − 319.56 = 160.44）
+       两侧差 0.6px 来自柱组左留白 25 / 右留白 24.4，按各自真实柱位算，不取平均
+     高按两位数形态（空间最紧者）配平：缺口下沿 → 正下方短柱顶 = 两行彩条之间的间距（BAND 29）
+       短柱顶 = G2_MID − G2.hi = 106.4，故高 = 106.4 − 29 = 77.4
+     包围盒比实心区各多出 r：圆角处蓝要向外鼓出，白才不会缩成发丝（见下方 path 注释） */
+  const CARD_W = 480;
+  const NOTCH_W_L     = +(X0 + W1 * 2 + GAP).toFixed(2);            // 161.04，对齐 1 号柱右缘
+  const NOTCH_W_R     = +(CARD_W - X0 - 4 * (W1 + GAP)).toFixed(2); // 160.44，对齐 4 号柱左缘
+  const NOTCH_H_SOLID = +(G2_MID - G2.hi - BAND).toFixed(1);   // 实心区高 77.4
+  const NOTCH_R       = 14;                                    // 缺口圆角
+  const NOTCH_H       = +(NOTCH_H_SOLID + NOTCH_R).toFixed(1); // 包围盒高 91.4
+
+  const rowTop   = document.getElementById("rowTop");
+  const rowBot   = document.getElementById("rowBot");
+  const star     = document.getElementById("star");
+  const starPath = document.getElementById("starPath");
+  const labs = document.querySelectorAll(".lab");
+
+  /* 数字定位基准 = 短柱高：pad = max(0, h − DIGIT_INSET)
+     长柱 pad = h − 53.2（数字落在柱端往上 53.2 的区间内），短柱 pad = 0（整柱居中）
+     两种算法得到的数字中心都是距柱端 26.6，六根柱子的数字才会排在同一条线上
+     原值 73 是按旧版短柱 71.7 取的，短柱改为 57.1 后必须同步，否则长短柱数字会错开 8px */
+  const DIGIT_INSET  = SHORT_H;                        // 53.2
+
+  /* 短柱（非激活）降透明度，退到背景层
+     透明度加在 background 上，数字保持白字——底色变浅后白字会自然糊掉，
+     这是有意为之：非激活档位本就该弱化，只有激活那根的数字需要清晰可读
+     （整柱加 opacity 效果类似，但会把白字一起拖淡，没有额外好处）
+     深色卡上 55% 会把颜色压成闷黑（白卡是往白里褪、黑卡是往黑里沉），
+     所以深色版收窄弱化幅度，只退一点；色相不变，只是叠色的底不同 */
+  const DIM_A = 0.55, DIM_A_DARK = 0.78;               // 短柱不透明度：浅色 / 深色
+  function rgba(hex, a){
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+
+  const topPills = [], botPills = [];
+
+  function makeRow(host, store){
+    for (let i = 0; i < 6; i++){
+      const p = document.createElement("div");
+      p.className = "pill";
+      p.style.width = W1 + "px";
+      p.style.left = (X0 + i * (W1 + GAP)) + "px";
+      p.style.background = COLORS[i];
+      p.textContent = i;
+      host.appendChild(p);
+      store.push(p);
+    }
+  }
+  makeRow(rowTop, topPills);
+  makeRow(rowBot, botPills);
+
+  /* 缺口形状（局部坐标，原点在卡角）。w/h = 实心区宽高，r = 圆角，W = w+r、H = h+r
+     路径走向（以左上角缺口为例）：
+       卡角(0,0) → 上边到 (W,0) → 鼓出弧到 (w,r) → 右边到 (w,h−r)
+       → 内角弧到 (w−r,h) → 下边到 (r,h) → 鼓出弧到 (0,H) → 闭合回卡角
+     两条「鼓出弧」的圆心在 (W,r) 与 (r,H)，圆弧朝卡心方向凸出，把圆角让给白底 */
+  function notchPath(w, mirror){
+    const h = NOTCH_H_SOLID, r = NOTCH_R, W = +(w + r).toFixed(2);
+    const X = v => +(mirror ? W - v : v).toFixed(2);
+    const A = (x2, y2, sweep) =>
+      "A " + r + " " + r + " 0 0 " + (mirror ? 1 - sweep : sweep) + " " + X(x2) + " " + y2;
+    return [
+      "M " + X(0) + " 0",
+      "L " + X(W) + " 0",
+      A(w, r, 0),                       // 与上边相接：蓝向右鼓出
+      "L " + X(w) + " " + (h - r),
+      A(w - r, h, 1),                   // 内角：蓝被切掉，白鼓进来
+      "L " + X(r) + " " + h,
+      A(0, h + r, 0),                   // 与左边相接：蓝向下鼓出
+      "Z"
+    ].join(" ");
+  }
+
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const notches = ["left", "right"].map((side, i) => {
+    const w = i === 0 ? NOTCH_W_L : NOTCH_W_R;   // 实心区宽，两侧各按真实柱位
+    const W = +(w + NOTCH_R).toFixed(2);         // 包围盒宽
+
+    const n = document.createElement("div");
+    n.className = "notch " + side;
+    n.style.width = W + "px";
+    n.style.height = NOTCH_H + "px";
+    n.style.setProperty("--notch-fill-h", NOTCH_H_SOLID + "px");  // ::after 补边条的高度
+
+    const svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + NOTCH_H);
+    const path = document.createElementNS(SVGNS, "path");
+    path.setAttribute("d", notchPath(w, i === 1));   // 右侧缺口为水平镜像
+    svg.appendChild(path);
+    n.appendChild(svg);
+
+    const num = document.createElement("div");
+    num.className = "num";
+    num.style.width = w + "px";
+    num.style.height = NOTCH_H_SOLID + "px";
+    num.appendChild(document.createElement("span")); // 文字包一层，量宽用
+    n.appendChild(num);
+
+    document.querySelector(".card").appendChild(n);
+    return { el:n, num, w };
+  });
+
+  /* 缺口里的代码字号固定等于标题字号（--fs-title），不做自适应
+     自适应要量文字宽度，而缺口隐藏时元素被 scale(0)、量不到真实宽度，换边时会算错；
+     固定字号后两个缺口、单双位数、换边都完全一致 */
+
+  const stickerEl = document.querySelector(".sticker");   // render 的弱化色与窄屏缩放都要用
+  rowBot.style.top = BOT_BASE + "px";          // 基线固定在最底边，下组从这里长出
+  star.style.top   = PAD_V + "px";             // 星标贴住上下留白，两种形态同一位置
+
+  function compose(z, s){                    // 合成规则：差值 ≤1 折叠单数字，≥2 主旨位在前
+    return Math.abs(z - s) <= 1 ? "" + Math.max(z, s) : "" + z + s;
+  }
+
+  // 立柱：top 行自柱顶向下生长（数字靠柱顶）；bot 行自基线向上长出（数字靠底端，镜像）
+  // grow=false 时高度收为 0：配合 overflow:hidden，即「长出去 / 收回来」
+  // bot 行的 bottom 是长出后的上移量：长柱为 0（一路伸到位），短柱为 ha−hi（够长后整根上移，顶端齐平）
+  function setPills(list, onIndex, g, mirrored, grow){
+    const a = stickerEl.classList.contains("dark") ? DIM_A_DARK : DIM_A;
+    list.forEach((p, i) => {
+      const h = grow ? (i === onIndex ? g.ha : g.hi) : 0;
+      const pad = Math.max(0, h - DIGIT_INSET);
+      p.style.background = (grow && i === onIndex) ? COLORS[i] : rgba(COLORS[i], a);
+      p.style.height = h + "px";
+      p.style.paddingTop    = mirrored ? pad + "px" : "0px";
+      p.style.paddingBottom = mirrored ? "0px" : pad + "px";
+      if (mirrored) p.style.bottom = +(grow ? g.ha - h : 0).toFixed(1) + "px";
+    });
+  }
+
+  function render(){
+    const two = Math.abs(Z - S) >= 2;
+    const g = two ? G2 : G1;
+    const folded = Math.max(Z, S);
+
+    // 柱底、轴标签、柱高共用同一时长与曲线，保证边缘与文字同步位移
+    rowTop.style.bottom = g.rowBottom + "px";
+    labs.forEach(l => l.style.top = g.labTop + "px");
+
+    setPills(topPills, two ? Z : folded, g, false, true);         // 上组：主旨位（单数字时为折叠值）
+    setPills(botPills, S, g, true, two);                          // 下组：实现位，镜像；单数字时收为 0
+
+    const anchor = two ? Z : folded;        // 星标始终在上组伸长的那根柱子上
+    star.style.left = +(X0 + anchor * (W1 + GAP) + W1 / 2 - 0.5 - 14).toFixed(2) + "px";
+    star.classList.toggle("off", !aiTheme);      // 靠 transform 收放，不用 display（无法过渡）
+    starPath.setAttribute("fill", COLORS[anchor]);
+
+    const code = compose(Z, S) + (aiTheme ? "*" : "");
+    const side = anchor <= 2 ? 1 : 0;            // 0/1/2 → 右上缺口，3/4/5 → 左上缺口
+    notches.forEach((o, i) => {
+      o.el.classList.toggle("off", i !== side);
+      o.num.firstElementChild.textContent = code;
+    });
+
+    currentCode = code;                          // 导出 PNG 时用作文件名
+    document.getElementById("downloadBtn").textContent = "下载 IIIA" + code + " 贴纸";
+
+    paintBtns("zBtns", Z);
+    paintBtns("sBtns", S);
+  }
+
+  /* 选中档位：整块填色。0/1 两档是浅粉橙，白字对比度只有 1.7–2.5，
+     按 WCAG 亮度换成深字；2 档以上继续用白字 */
+  function inkOn(hex){
+    const n = parseInt(hex.slice(1), 16);
+    const lin = c => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+    const L = .2126 * lin(n >> 16 & 255) + .7152 * lin(n >> 8 & 255) + .0722 * lin(n & 255);
+    return L > .3 ? "#2f3136" : "#fff";
+  }
+
+  function paintBtns(hostId, v){
+    document.querySelectorAll("#" + hostId + " .pick").forEach((p, i) => {
+      const on = i === v;
+      const b = p.firstElementChild;
+      p.classList.toggle("on", on);            // .pick 的宽度决定这根是不是加宽并露出档名
+      b.style.background  = on ? COLORS[i] : "#f4f6fa";
+      b.style.color       = on ? inkOn(COLORS[i]) : "#5a6270";
+      b.style.borderColor = on ? COLORS[i] : "#e2e6ee";
+    });
+  }
+
+  function makeBtns(hostId, labels, onPick){
+    const host = document.getElementById(hostId);
+    labels.forEach((label, i) => {
+      // 每档 = 一个定宽壳 .pick（宽度随 .on 变化）+ 里面的按钮 + 气泡。
+      // 气泡放在按钮外面，按钮才能 overflow:hidden 裁掉还没长开的档名
+      const pick = document.createElement("span");
+      pick.className = "pick";
+
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-label", "档位" + i + "·" + label);
+
+      const k = document.createElement("span");
+      k.className = "k";
+      k.textContent = "档位";
+      const n = document.createElement("span");
+      n.className = "n";
+      n.textContent = i;
+      const t = document.createElement("span");
+      t.className = "t";
+      t.textContent = "·" + label;            // 与数字同字号，靠「·」分隔
+
+      const tip = document.createElement("span");
+      tip.className = "tip";
+      tip.textContent = label;                // 气泡只报档名，数字和「档位」字样交给选中框
+
+      b.append(k, n, t);
+      pick.append(b, tip);
+      b.onclick = () => { onPick(i); render(); };
+      host.appendChild(pick);
+    });
+  }
+  makeBtns("zBtns", LABEL_Z, v => Z = v);
+  makeBtns("sBtns", LABEL_S, v => S = v);
+
+  const themeRadios = [...document.querySelectorAll("#themeSeg input")];
+  themeRadios.forEach(r => {
+    r.onchange = e => { if (e.target.checked){ aiTheme = e.target.value === "1"; render(); } };
+    r.checked = (r.value === "1") === aiTheme;   // ?level= 可能已改过默认值，控件状态要跟上
+  });
+
+  render();
+
+  /* 窄屏：贴纸本体内部坐标全是 px，直接整块 transform 缩放，省一套响应式坐标 */
+  function fitSticker(){
+    const s = Math.min(1, (document.documentElement.clientWidth - 48) / 500);
+    stickerEl.style.transformOrigin = "top center";
+    stickerEl.style.transform = s < 1 ? "scale(" + s.toFixed(4) + ")" : "";
+  }
+  fitSticker();
+  addEventListener("resize", fitSticker);
+
+  /* 深浅只切贴纸本体，面板与页面不变；弱化透明度跟着模式走，要重算一次柱色 */
+  const darkBtn = document.getElementById("darkToggle");
+  darkBtn.onclick = () => {
+    const on = !stickerEl.classList.contains("dark");
+    stickerEl.classList.toggle("dark", on);
+    darkBtn.setAttribute("aria-pressed", on);
+    darkBtn.textContent = "深色模式" + (on ? "开" : "关");
+    render();
+  };
+
+  /* 导出 PNG：不用截图库（Chrome 会把含 foreignObject 的 SVG 画布整张污染，toBlob 直接报错），
+     也不引第三方库（单文件要求）——贴纸本身全是简单几何，直接用 Canvas 按 render 的同一套
+     常量重绘一遍。颜色读自 computedStyle，深浅模式自动跟随；2 倍输出 1000×800 */
+  const FONT = '"Noto Sans CJK SC","Noto Sans SC","PingFang SC",sans-serif';
+  function pathRR(ctx, x, y, w, h, r){            // r = [tl, tr, br, bl]
+    const [a, b, c, d] = r;
+    ctx.beginPath();
+    ctx.moveTo(x + a, y);
+    ctx.lineTo(x + w - b, y); ctx.arcTo(x + w, y, x + w, y + b, b);
+    ctx.lineTo(x + w, y + h - c); ctx.arcTo(x + w, y + h, x + w - c, y + h, c);
+    ctx.lineTo(x + d, y + h); ctx.arcTo(x, y + h, x, y + h - d, d);
+    ctx.lineTo(x, y + a); ctx.arcTo(x, y, x + a, y, a);
+    ctx.closePath();
+  }
+
+  function exportPng(){
+    const SCALE = 2;
+    const two = Math.abs(Z - S) >= 2;
+    const g = two ? G2 : G1;
+    const folded = Math.max(Z, S);
+    const anchor = two ? Z : folded;
+    const code = compose(Z, S) + (aiTheme ? "*" : "");
+    const side = anchor <= 2 ? 1 : 0;              // 0/1/2 → 右上缺口，3/4/5 → 左上缺口
+    const dark = stickerEl.classList.contains("dark");
+    const a = dark ? DIM_A_DARK : DIM_A;
+
+    const cs = getComputedStyle(stickerEl);
+    const frame = cs.backgroundColor;              // 深浅模式自动跟随 CSS
+    const bg    = getComputedStyle(document.querySelector(".card")).backgroundColor;
+    const ink   = getComputedStyle(document.querySelector(".lab")).color;
+
+    const cv = document.createElement("canvas");
+    cv.width = 500 * SCALE; cv.height = 400 * SCALE;
+    const ctx = cv.getContext("2d");
+    ctx.scale(SCALE, SCALE);
+    ctx.textBaseline = "middle";
+
+    // 外框 + 标题
+    pathRR(ctx, 0, 0, 500, 400, [30,30,30,30]);
+    ctx.fillStyle = frame; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+    ctx.font = "700 50px " + FONT;
+    const hasLS = "letterSpacing" in ctx;
+    if (hasLS) ctx.letterSpacing = "2px";
+    // 与 DOM 同款配平：墨心比行盒中心低 1.84px；字距补一半防末字后的空当带偏居中
+    ctx.fillText("人工智能参与指数", 250 + (hasLS ? 1 : 0), HEAD_H / 2 + 1.84);
+    if (hasLS) ctx.letterSpacing = "0px";
+
+    // 白卡（深色版即黑卡）
+    pathRR(ctx, 10, HEAD_H, 480, 400 - 10 - HEAD_H, [26,26,26,26]);
+    ctx.fillStyle = bg; ctx.fill();
+
+    // 柱：上组自基线向上长，下组顶端对齐后向下长；数字位置与 DOM 的 padding 逻辑一致
+    const topBase = CARD_H - g.rowBottom;
+    function drawPill(i, group){
+      const isOn = group === "top" ? (two ? i === Z : i === folded) : (two && i === S);
+      const h = isOn ? g.ha : g.hi;
+      const x = 10 + X0 + i * (W1 + GAP);
+      const y = group === "top" ? HEAD_H + topBase - h : HEAD_H + BOT_BASE - g.ha;
+      pathRR(ctx, x, y, W1, h, group === "top" ? [21,21,10,10] : [10,10,21,21]);
+      ctx.fillStyle = isOn ? COLORS[i] : rgba(COLORS[i], a);
+      ctx.fill();
+      const pad = Math.max(0, h - DIGIT_INSET);
+      const cy = group === "top" ? y + (h - pad) / 2 : y + pad + (h - pad) / 2;
+      ctx.fillStyle = "#fff"; ctx.font = "700 30px " + FONT;
+      ctx.fillText(String(i), x + W1 / 2, cy);
+    }
+    for (let i = 0; i < 6; i++) drawPill(i, "top");
+    if (two) for (let i = 0; i < 6; i++) drawPill(i, "bot");
+
+    // 星标：Path2D 直接吃 SVG 路径，平移到与 DOM 相同的位置
+    if (aiTheme){
+      const sx = 10 + X0 + anchor * (W1 + GAP) + W1 / 2 - 0.5 - 14;
+      ctx.save();
+      ctx.translate(sx - 52.5, HEAD_H + PAD_V - 175);
+      ctx.fillStyle = COLORS[anchor];
+      ctx.fill(new Path2D(starPath.getAttribute("d")));
+      ctx.restore();
+    }
+
+    // 指数缺口：同一条 notchPath，蓝底反白代码
+    const w = side === 0 ? NOTCH_W_L : NOTCH_W_R;
+    ctx.save();
+    ctx.translate(side === 0 ? 10 : 10 + 480 - (w + NOTCH_R), HEAD_H);
+    ctx.fillStyle = frame;
+    ctx.fill(new Path2D(notchPath(w, side === 1)));
+    ctx.fillStyle = "#fff"; ctx.font = "700 50px " + FONT;
+    ctx.fillText(code, side === 0 ? w / 2 : w + NOTCH_R - w / 2, NOTCH_H_SOLID / 2);
+    ctx.restore();
+
+    // 轴标签
+    ctx.fillStyle = ink; ctx.font = "500 19px " + FONT;
+    ctx.textAlign = "left";
+    ctx.fillText("人工制作", 10 + 20, HEAD_H + g.labTop + 11.5);
+    ctx.textAlign = "right";
+    ctx.fillText("自动生成", 10 + 480 - 20, HEAD_H + g.labTop + 11.5);
+
+    return new Promise(res => cv.toBlob(res, "image/png"));
+  }
+
+  const dlBtn = document.getElementById("downloadBtn");
+  dlBtn.onclick = async () => {
+    const label = dlBtn.textContent;
+    dlBtn.disabled = true;
+    dlBtn.textContent = "生成中…";
+    try {
+      const blob = await exportPng();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      // * 不能进文件名（写作 -star）；深色版追加 -dark 后缀，两种版本可以并存区分
+      const suffix = (currentCode.replace("*", "-star")) + (stickerEl.classList.contains("dark") ? "-dark" : "");
+      a.download = "IIIA" + suffix + ".png";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (err) {
+      alert("导出失败：" + err.message);
+    } finally {
+      dlBtn.disabled = false;
+      dlBtn.textContent = label;
+    }
+  };
+</script>
+</body>
+</html>
