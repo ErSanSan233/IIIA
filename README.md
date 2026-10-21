@@ -8,15 +8,13 @@ IIIA 的判定依据是“这件作品是如何被想出来、又是如何被做
 
 ## 适用范围
 
-IIIA 起源于对视频的界定，如今努力适用于一切可被观看、阅读、聆听或使用的作品：视频、音频与播客、文字、图像与设计、音乐、代码等。
+IIIA 起源于对视频的界定，如今努力适用于一切可被观看、阅读、聆听或使用的作品：视频、音频、文字、图像与设计、音乐、代码等。
 
-IIIA 中所说的 AI，均指能够输出大规模、有规律结果、一定程度上引起恐慌的生成式 AI。对于更多领域的 AI，如传统机器学习算法、AlphaGo、游戏中基于行为树或状态机的 NPC 等，均不在 IIIA 的考虑范围。
+IIIA 中所说的 AI，均指能够输出大规模、有规律结果的生成式 AI（这类模型近年的普及引发了广泛的社会讨论）。对于更多领域的 AI，如传统机器学习算法、AlphaGo、游戏中基于行为树或状态机的 NPC 等，均不在 IIIA 的考虑范围。
 
 IIIA 不评价作品好坏，只描述 AI 的参与程度。
 
 IIIA 是一份建议性质的尝试，而非任何强制或非强制的标准，没有认证机构。是否采用、如何采用 IIIA，由创作者自愿决定。
-
-当然大家如果认同的话我会很开心就是了。
 
 ## 两个判定维度和一个修正选项
 
@@ -35,14 +33,14 @@ IIIA 是一份建议性质的尝试，而非任何强制或非强制的标准，
 
 ## 如何判定 IIIA
 
-一项作品的 IIIA 由一位或两位数字，以及修正符号星号表示。确定 IIIA 的过程可概括为以下步骤：
+确定 IIIA 的过程可概括为以下步骤：
 
 - 确定 Z 和 S 档位；
 - 确定 IIIA 的表示。
 
 ### 确定 Z 和 S 档位
 
-其中，Z 和 S 档位用 0～5 的整数表示，依照下表决定
+其中，Z 和 S 档位用 0～5 的整数表示，依照以下两表决定。
 
 #### 主旨思路（Z）
 
@@ -76,8 +74,8 @@ IIIA 的表示由数字部分和修正符号组成。
 
 | 条件 | 标注形式 | 示例 |
 | ---- | -------- | ---- |
-| \|Z − S\| ≤ 1 | 取两者中较大值，写作**一位数字** | Z=2，S=3 → 表示为`3` |
-| \|Z − S\| ≥ 2 | 按“**Z 在前、S 在后**”连续写作**两位数字** | Z=0，S=4 → 表示为`04` |
+| \|Z - S\| ≤ 1 | 取两者中较大值，写作**一位数字** | Z=2，S=3 → 表示为`3` |
+| \|Z - S\| ≥ 2 | 按“**Z 在前、S 在后**”连续写作**两位数字** | Z=0，S=4 → 表示为`04` |
 
 #### 修正符号
 
@@ -86,7 +84,7 @@ IIIA 的表示由数字部分和修正符号组成。
 #### 注意事项
 
 - 作品的 IIIA 数字部分请勿删除先导 0，如`03`和`3`被视作不同的 IIIA 档位。
-- \|Z − S\| ≤ 1 时 IIIA 的档位为单数字，这一模糊度是有意保留的。也就是说，IIIA 不存在形如`23`的档位，应直接判定为`3`。
+- \|Z - S\| ≤ 1 时 IIIA 的档位为单数字，这一模糊度是有意保留的。也就是说，IIIA 不存在形如`23`的档位，应直接判定为`3`。
 - 是否添加修正符号的唯一判断依据是作品讨论的主题。
 
 ### 判定示例
@@ -96,7 +94,7 @@ IIIA 的表示由数字部分和修正符号组成。
 | 类型   | 作品情形                                                     | Z    | S    | IIIA  |
 | ------ | ------------------------------------------------------------ | ---- | ---- | ----- |
 | 视频   | 全程手写手拍，未用任何 AI 功能；主题是数码产品               | 0    | 0    | `0`   |
-| 视频   | AI 生成全部素材与剪辑，人工只抽查了两处明显错误；主题是短剧  | 3    | 4    | `4`   |
+| 视频   | AI 生成全部素材与剪辑，但选题、叙事结构与最终结论由人工定调并审核，人工只抽查了两处明显错误；主题是短剧  | 3    | 4    | `4`   |
 | 文字   | 人类从头撰写全文，用 AI 做了一轮语法校对与润色；主题是公众号的广告 | 0    | 2    | `02`  |
 | 文字   | AI 生成段落，人工重写结构与论据并逐条核实事实；主题是爱情小说 | 3    | 2    | `3`   |
 | 图像   | 人类在 AI 展览拍摄打卡照片，用修图软件自带的磨皮功能处理后出图，并未输入提示词 | 0    | 0    | `0*`  |
@@ -121,11 +119,11 @@ IIIA 的表示由数字部分和修正符号组成。
 
 ### 以文本形式标注
 
-可在作品中以如下等形式的文字展示作品的 IIIA：
+可在作品中以如下形式的文字展示作品的 IIIA：
 
 - IIIA13；
-- `AI参与指数：3` ；
-- 本作品 IIIA：0*。
+- `AI参与指数：3`；
+- 本作品 IIIA：`0*`。
 
 推荐采用“IIIA 前缀+连写 IIIA 档位”的形式，如“IIIA24”。
 
@@ -143,7 +141,7 @@ IIIA 支持 Shields.io 网站徽章。如果项目带有 README.md，或其他�
 https://img.shields.io/badge/IIIA-<档位>[*]-<颜色>
 ```
 
-- `<档位>`：按合成规则得出的单数字（如 `3`）或两位数（如 `24`）。
+- `<档位>`：按上文规则得出的单数字（如 `3`）或两位数（如 `24`）。
 - `[*]`：作品以 AI 为主题时加星号，否则省略。
 - `<颜色>`：取 Z 与 S 中的**较大值**所对应的颜色，使其反映该作品 AI 参与的最高程度。
 
@@ -153,7 +151,7 @@ https://img.shields.io/badge/IIIA-<档位>[*]-<颜色>
 
 #### 不含修正符号的 IIIA 档位
 
-| Z ＼ S | 0 | 1 | 2 | 3 | 4 | 5 |
+| Z \ S | 0 | 1 | 2 | 3 | 4 | 5 |
 | ------ | - | - | - | - | - | - |
 | **0** | [![IIIA-0](https://img.shields.io/badge/IIIA-0-FAB689)](https://github.com/ErSanSan233/IIIA) | [![IIIA-1](https://img.shields.io/badge/IIIA-1-D9A295)](https://github.com/ErSanSan233/IIIA) | [![IIIA-02](https://img.shields.io/badge/IIIA-02-B97CAC)](https://github.com/ErSanSan233/IIIA) | [![IIIA-03](https://img.shields.io/badge/IIIA-03-A865B3)](https://github.com/ErSanSan233/IIIA) | [![IIIA-04](https://img.shields.io/badge/IIIA-04-9370DB)](https://github.com/ErSanSan233/IIIA) | [![IIIA-05](https://img.shields.io/badge/IIIA-05-4D6BFE)](https://github.com/ErSanSan233/IIIA) |
 | **1** | [![IIIA-1](https://img.shields.io/badge/IIIA-1-D9A295)](https://github.com/ErSanSan233/IIIA) | [![IIIA-1](https://img.shields.io/badge/IIIA-1-D9A295)](https://github.com/ErSanSan233/IIIA) | [![IIIA-2](https://img.shields.io/badge/IIIA-2-B97CAC)](https://github.com/ErSanSan233/IIIA) | [![IIIA-13](https://img.shields.io/badge/IIIA-13-A865B3)](https://github.com/ErSanSan233/IIIA) | [![IIIA-14](https://img.shields.io/badge/IIIA-14-9370DB)](https://github.com/ErSanSan233/IIIA) | [![IIIA-15](https://img.shields.io/badge/IIIA-15-4D6BFE)](https://github.com/ErSanSan233/IIIA) |
@@ -164,7 +162,7 @@ https://img.shields.io/badge/IIIA-<档位>[*]-<颜色>
 
 #### 含修正符号的 IIIA 档位
 
-| Z ＼ S | 0 | 1 | 2 | 3 | 4 | 5 |
+| Z \ S | 0 | 1 | 2 | 3 | 4 | 5 |
 | ------ | - | - | - | - | - | - |
 | **0** | [![IIIA-0*](https://img.shields.io/badge/IIIA-0*-FAB689)](https://github.com/ErSanSan233/IIIA) | [![IIIA-1*](https://img.shields.io/badge/IIIA-1*-D9A295)](https://github.com/ErSanSan233/IIIA) | [![IIIA-02*](https://img.shields.io/badge/IIIA-02*-B97CAC)](https://github.com/ErSanSan233/IIIA) | [![IIIA-03*](https://img.shields.io/badge/IIIA-03*-A865B3)](https://github.com/ErSanSan233/IIIA) | [![IIIA-04*](https://img.shields.io/badge/IIIA-04*-9370DB)](https://github.com/ErSanSan233/IIIA) | [![IIIA-05*](https://img.shields.io/badge/IIIA-05*-4D6BFE)](https://github.com/ErSanSan233/IIIA) |
 | **1** | [![IIIA-1*](https://img.shields.io/badge/IIIA-1*-D9A295)](https://github.com/ErSanSan233/IIIA) | [![IIIA-1*](https://img.shields.io/badge/IIIA-1*-D9A295)](https://github.com/ErSanSan233/IIIA) | [![IIIA-2*](https://img.shields.io/badge/IIIA-2*-B97CAC)](https://github.com/ErSanSan233/IIIA) | [![IIIA-13*](https://img.shields.io/badge/IIIA-13*-A865B3)](https://github.com/ErSanSan233/IIIA) | [![IIIA-14*](https://img.shields.io/badge/IIIA-14*-9370DB)](https://github.com/ErSanSan233/IIIA) | [![IIIA-15*](https://img.shields.io/badge/IIIA-15*-4D6BFE)](https://github.com/ErSanSan233/IIIA) |
@@ -185,10 +183,12 @@ https://img.shields.io/badge/IIIA-<档位>[*]-<颜色>
 
 ## 版本
 
-当前版本 1.1。改进日志见 [CHANGELOG.md](CHANGELOG.md)，1.0 版本存档见 [versions/v1.md](versions/v1.md)。
+当前版本 1.1。更新日志见 [CHANGELOG.md](CHANGELOG.md)，1.0 版本存档见 [versions/v1.md](versions/v1.md)。
 
 IIIA 目前还能坚持向下兼容。
 
 ## 许可
 
 本档位分类建议库采用 MIT 许可，您可以在遵循许可协议的前提下自由使用和传播。
+
+当然大家如果认同的话我会很开心就是了。
