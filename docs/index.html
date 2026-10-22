@@ -64,7 +64,7 @@
   .nav .brand{ font-size:15px; font-weight:600; color:var(--ink); letter-spacing:.02em; }
   .nav .brand:hover{ text-decoration:none; }
   .nav nav{ display:flex; gap:26px; }
-  .nav nav a{ font-size:13px; color:var(--ink); opacity:.85; }
+  .nav nav a{ font-size:13px; color:var(--ink); opacity:.85; display:inline-flex; align-items:center; }
   .nav nav a:hover{ opacity:1; text-decoration:none; }
 
   /* ===== 区块骨架 ===== */
@@ -91,6 +91,11 @@
 
   /* ===== 首屏 ===== */
   /* 贴纸在最上面当主视觉，所以顶部留白收一点、底部补足，让文字落在视线中上方 */
+  /* 行末全角标点向右悬挂半格：全角叹号句号的墨迹都在字身左半，
+     字身右侧那半格空白会把居中/对齐的行「顶」偏，吃掉半格之后视觉边缘才落到墨迹上。
+     只用在确定位于行末的标点上（这些标题都靠 <br> 断行，不会中途换行）。 */
+  .tq{ margin-right:-.5em; }
+
   .hero{ padding:64px 0 100px; text-align:center; }
   .hero h1{
     font-size:clamp(38px, 7.2vw, 68px); line-height:1.06; letter-spacing:-.025em;
@@ -101,8 +106,10 @@
     font-size:clamp(17px, 2.2vw, 21px); line-height:1.5; color:var(--ink-2); letter-spacing:0;
   }
   .cta{ display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap; margin-top:34px; }
-  /* 首屏两个入口一律蓝字加箭头，不摆实心按钮——画面里唯一的主角应该是贴纸本身 */
-  .link{ font-size:17px; letter-spacing:0; }
+  /* 首屏入口一律蓝字加箭头，不摆实心按钮——画面里唯一的主角应该是贴纸本身 */
+  .link{ font-size:17px; letter-spacing:0; display:inline-flex; align-items:center; }
+  /* GitHub 图标：内联 SVG（官方 mark-github 16px 路径），1em 随字号缩放、fill 取 currentColor */
+  .gh-ico{ width:1em; height:1em; flex:none; display:block; fill:currentColor; margin-right:.34em; }
   .link::after{
     content:"\2009›"; display:inline-block;
     transition:transform .2s var(--ease);
@@ -142,26 +149,37 @@
   .quiz{ max-width:720px; margin:72px auto 0; }
   .q{ padding:44px 0; border-top:1px solid var(--hair); }
   .q:first-child{ border-top:0; padding-top:0; }
+  .q.no-rule{ border-top:0; }          /* 只靠留白分段，不再画线 */
   .q h3{ font-size:clamp(21px, 2.6vw, 27px); line-height:1.25; }
   .q-hint{ margin:10px 0 0; font-size:15px; color:var(--ink-3); letter-spacing:0; }
 
-  /* segmented control：苹果的经典控件，浅灰轨道里浮起一枚白色胶囊 */
+  /* segmented control：与下面标注面板同一套控件语言——胶囊轨道里一枚会平移的滑块 */
   .seg{
-    display:inline-flex; gap:2px; padding:2px; margin-top:22px;
-    background:#e8e8ed; border-radius:11px;
+    position:relative; display:inline-flex; margin-top:22px;
+    gap:var(--seg-gap); padding:var(--seg-pad);
+    background:#e8e8ed; border-radius:980px;
+    --seg-cell:40px; --seg-gap:6px; --seg-pad:5px;
+  }
+  /* 位置与宽度由 JS 定量，CSS 只管过渡——换选项时滑块是「走过去」的 */
+  .seg-pill{
+    position:absolute; top:var(--seg-pad); bottom:var(--seg-pad); left:0; width:0;
+    border-radius:980px; background:#fff; pointer-events:none; opacity:0;
+    box-shadow:0 1px 3px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.08);
+    transition:transform .3s var(--ease), width .3s var(--ease), opacity .2s var(--ease);
   }
   .seg button{
+    position:relative; z-index:1;
     font-family:inherit; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    height:var(--seg-cell); padding:0 22px;
     border:0; background:transparent; color:var(--ink-2);
-    border-radius:9px; padding:8px 22px; font-size:14.5px; font-weight:500; letter-spacing:0;
-    transition:background-color var(--dur) var(--ease), color var(--dur) var(--ease),
-               box-shadow var(--dur) var(--ease);
+    border-radius:980px; font-size:14.5px; font-weight:500; letter-spacing:0;
+    white-space:nowrap;
+    transition:color var(--dur) var(--ease), transform .1s var(--ease);
   }
   .seg button:hover{ color:var(--ink); }
-  .seg button.on{
-    background:#fff; color:var(--ink); font-weight:600;
-    box-shadow:0 1px 3px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.08);
-  }
+  .seg button:active{ transform:scale(.97); }
+  .seg button.on{ color:var(--ink); font-weight:600; }
   .seg button:focus-visible{ outline:2px solid var(--ui-blue); outline-offset:2px; }
 
   .q-ans{
@@ -174,11 +192,24 @@
     margin:24px 0 6px; font-size:16.5px; line-height:1.6; color:var(--ink-2); letter-spacing:0;
   }
   .q-inner > p b{ color:var(--ink); font-weight:600; }
-  .q-sub{
-    margin:32px 0 4px; font-size:13px; font-weight:600; letter-spacing:.02em; color:var(--ink-3);
+  /* 两位数的两组档位并列：0–5 只保留一列共享的数字表头，每档两条说明同起一行、逐行对齐 */
+  /* 与一位数字那组的「段落 → 列表」间距对齐：下方 6px + 这里 20px ≈ 27px */
+  .q-cols{ margin-top:20px; }
+  .q-ghead, .q-grow{
+    display:grid; grid-template-columns:22px 1fr 1fr; column-gap:24px;
   }
+  .q-ghead{
+    padding-bottom:9px; border-bottom:1px solid var(--hair);
+    font-size:16px; font-weight:600; letter-spacing:0; color:var(--ink);
+  }
+  .q-grow{ padding:14px 0; }
+  .q-grow + .q-grow{ border-top:1px solid var(--hair); }
+  /* 数字与说明同 line-height，基线才对得齐 */
+  .q-grow .lv-n{ margin-top:0; line-height:1.6; }
+  .q-grow p{ margin:0; font-size:16.5px; line-height:1.6; color:var(--ink); letter-spacing:0; }
+  .q-tag{ display:none; }
   .q-row{ display:flex; gap:16px; padding:14px 0; border-top:1px solid var(--hair); }
-  .q-row:first-of-type, .q-sub + .q-row{ border-top:0; }
+  .q-row:first-of-type{ border-top:0; }
   .lv-n{
     flex:none; width:22px; margin-top:1px;
     font-family:var(--mono); font-size:19px; font-weight:600; line-height:1.5;
@@ -186,20 +217,148 @@
   }
   .lv-n.lv0{ color:var(--c0); } .lv-n.lv1{ color:var(--c1); } .lv-n.lv2{ color:var(--c2); }
   .lv-n.lv3{ color:var(--c3); } .lv-n.lv4{ color:var(--c4); } .lv-n.lv5{ color:var(--c5); }
-  .q-row p{ margin:0; font-size:16.5px; line-height:1.6; color:var(--ink); letter-spacing:0; }
+  /* 一位数字那组：破折号去掉，释义挂到行尾右对齐——苹果规格表那种「名目 / 释义」两栏 */
+  .q-row p{
+    margin:0; font-size:16.5px; line-height:1.6; color:var(--ink); letter-spacing:0;
+    flex:1; min-width:0;
+    display:flex; flex-wrap:wrap; align-items:baseline; column-gap:24px;
+  }
+  .q-row p b{ flex:none; }
+  .q-row .q-def{ margin-left:auto; text-align:right; }
   .q-row p b{ font-weight:600; }
 
   /* ===== 嵌入的贴纸生成器（类名全部 sg- 前缀，与页面样式隔离） ===== */
   .sg-wrap{
-    position:relative;
-    display:flex; flex-direction:column; align-items:center; gap:30px; margin-top:56px;
+    display:flex; flex-direction:column; align-items:center; margin-top:56px; width:100%;
   }
-  /* 产品背后那层极淡的光晕：苹果用来把主体从黑底上托起来，不抢戏 */
-  .sg-wrap::before{
-    content:""; position:absolute; inset:-8% -20% 10%;
-    background:radial-gradient(52% 44% at 50% 32%, rgba(65,176,246,.20), rgba(65,176,246,0) 72%);
+  /* 标注方式是主导选择器：像苹果产品页选颜色那样，摆在预览正上方 */
+  .sg-modebar{
+    display:flex; flex-direction:column; align-items:center; gap:11px;
+    width:100%; margin-bottom:26px;
+  }
+  .sg-modelab{ margin:0; font-size:12px; letter-spacing:.16em; color:#86868b; }
+  .sg-seg.sg-seg-mode{ width:min(420px,100%); --cell:44px; background:rgba(255,255,255,.10); }
+  .sg-seg.sg-seg-mode span{ font-size:15px; }
+  /* 三种标注方式各占一层。整块高度由 JS 定量、走 transition——
+     换方式时高度是「移」过去的，下面面板不会被顶得闪一下；
+     层本身叠在一起靠 opacity 交替，所以内容是淡入淡出而不是硬切 */
+  .sg-stage{
+    position:relative; width:100%; margin-bottom:36px;
+    transition:height .42s var(--ease);
+  }
+  .sg-view{
+    display:flex; position:absolute; left:0; right:0; top:0;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .32s var(--ease), visibility 0s linear .32s;
+  }
+  .sg-view.on{
+    opacity:1; visibility:visible; pointer-events:auto;
+    transition:opacity .32s var(--ease), visibility 0s;
+  }
+
+  /* —— 贴纸层：背后那层极淡的光晕，苹果用它把主体从黑底上托起来，不抢戏 —— */
+  .view-sticker{ position:relative; justify-content:center; }
+  .view-sticker::before{
+    content:""; position:absolute; inset:-8% -6% 4%;
+    background:radial-gradient(52% 46% at 50% 42%, rgba(65,176,246,.20), rgba(65,176,246,0) 72%);
     pointer-events:none;
   }
+
+  /* —— 文字层：只有一枚最终档位的大字 —— */
+  .view-text{ flex-direction:column; align-items:center; padding:26px 0 12px; }
+  .text-code{
+    max-width:100%; text-align:center;
+    font-family:var(--mono); font-size:clamp(38px, 7.6vw, 62px); font-weight:600;
+    letter-spacing:-.01em; color:#fff; line-height:1.1;
+  }
+
+  /* —— 徽章层：两套表左右排开，选中的那张居中，另一张压暗在边上等着 —— */
+  .view-badge{ flex-direction:column; align-items:center; padding:14px 0 4px; }
+  .badge-viewport{
+    position:relative; width:100%;
+    overflow:hidden; padding:6px 0 8px;
+  }
+  /* 左右翻页：苹果画廊那种圆形按钮，半透明白底 + 细箭头，压在两张表上面 */
+  .badge-nav{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:2;
+    width:38px; height:38px; border:0; border-radius:50%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.12); color:#f5f5f7;
+    transition:background .2s var(--ease), opacity .2s var(--ease), transform .12s var(--ease);
+  }
+  .badge-nav:hover{ background:rgba(255,255,255,.22); }
+  .badge-nav:active{ transform:translateY(-50%) scale(.93); }
+  .badge-nav.prev{ left:6px; }
+  .badge-nav.next{ right:6px; }
+  .badge-nav[disabled]{ opacity:.25; cursor:default; }
+  .badge-nav:focus-visible{ outline:2px solid #f5f5f7; outline-offset:2px; }
+  .badge-track{
+    display:flex; align-items:flex-start; gap:40px;
+    transition:transform .5s var(--ease);
+    will-change:transform;
+  }
+  /* 窄屏下表格必然放不下：整张表在框内横向滚动（宽屏时宽度=内容宽，不出滚动条） */
+  .badge-slide{
+    flex:none; width:max-content; max-width:100%; overflow-x:auto;
+    opacity:.2; cursor:pointer;
+    transition:opacity .45s var(--ease);
+  }
+  .badge-slide.on{ opacity:1; cursor:default; }
+  /* 边上那张的格子也留着可点：点哪枚就切到那张表并选中该枚（不是只换主题）。
+     整张略微提亮一点，暗示它内部是逐枚可选的，不只是「点一下换过去」 */
+  .badge-slide:not(.on):hover{ opacity:.32; }
+  /* 表是 8×8：col1=主旨思路 / col2=行号 / col3–8=六列徽章，
+     row1=实现过程 / row2=列号 / row3–8=六行徽章。左上角空着（原来是「Z \ S」）。
+     ⚠️ 行列必须显式声明成 8 条，否则 `3 / -1` 里的 -1 指向的是不存在的末条线 */
+  .badge-grid{
+    display:grid;
+    grid-template-columns:auto auto repeat(6, max-content);
+    grid-template-rows:auto auto repeat(6, auto);
+    gap:11px 12px; align-items:center; justify-content:center;
+    width:max-content; margin:0 auto;
+  }
+  .badge-grid .bh{
+    font-size:11.5px; color:#86868b; letter-spacing:.04em; text-align:center; white-space:nowrap;
+  }
+  /* 轴名用汉字，不用 Z/S 记号；各自在跨出的方向上居中 */
+  .bg-axis{
+    font-size:11.5px; font-weight:500; letter-spacing:.08em; color:#86868b;
+    white-space:nowrap; text-align:center;
+  }
+  .bg-axis-top{ padding-bottom:1px; }
+  /* 左侧轴名逆时针 90°：整块躺倒、自下而上读。
+     ⚠️ transform 不改变布局盒，所以得自己把宽度压到「一行字的高度」——
+     不压的话第 1 列会按横向文字宽度（约 46px）撑开，转完边上留一大条空白。
+     min-width:0 是必须的：grid item 默认自动最小尺寸 = min-content，
+     nowrap 的中文会把列顶回原宽。flex 居中让超宽的那行向两侧等量溢出，
+     转过来之后才正好落在列的中线上。 */
+  .bg-axis-left{
+    display:flex; align-items:center; justify-content:center;
+    width:1.25em; min-width:0; padding:0;
+    transform:rotate(-90deg);
+  }
+  .bcell{
+    display:flex; justify-content:center;
+    background:none; border:0; padding:2px; border-radius:6px; cursor:pointer;
+    transition:transform .16s var(--ease), opacity .3s var(--ease);
+  }
+  .bcell:hover{ transform:translateY(-2px); }
+  .bcell:focus-visible{ outline:2px solid #f5f5f7; outline-offset:2px; }
+  /* 选中不再靠白框：选中那枚维持档位色，同表其余压暗到 .35——
+     跟边上那张表的「暗掉」同一套语言，白色描边太抢戏 */
+  .badge-slide.on .bcell{ opacity:.35; }
+  .badge-slide.on .bcell:hover{ opacity:1; }
+  .badge-slide.on .bcell.on{ opacity:1; }
+  /* 徽章本体：按 Shields.io 的两段式外观复刻，不引外部图片（零依赖 + retina 清晰）
+     比原尺寸略放大一档（20→22px 高，11→11.5px 字，内边距 6→7），仅此而已 */
+  .bdg{
+    display:inline-flex; align-items:stretch; height:22px;
+    border-radius:3px; overflow:hidden;
+    font-family:Verdana, "DejaVu Sans", Geneva, sans-serif;
+    font-size:11.5px; line-height:22px; white-space:nowrap;
+  }
+  .bdg i{ font-style:normal; padding:0 7px; background:#555; color:#fff; }
+  .bdg b{ font-weight:400; padding:0 7px; color:#fff; }
   .sg-sticker{
     position:relative; width:500px;
     font-family:var(--font-sticker);        /* 必须：导出 PNG 用的就是这一族 */
@@ -339,7 +498,15 @@
     display:flex; gap:var(--cell-gap); width:100%;
     background:rgba(255,255,255,.08); border-radius:980px; padding:5px;
   }
-  .sg-seg label{ position:relative; display:block; flex:1; min-width:0; }
+  .sg-seg{ position:relative; }
+  /* 选中指示是一枚会平移的滑块：换选项时它「走过去」，而不是在原地渐变出来 */
+  .sg-seg-pill{
+    position:absolute; top:5px; bottom:5px; left:0; width:0;
+    border-radius:980px; background:#f5f5f7; pointer-events:none;
+    transition:transform .3s var(--ease), width .3s var(--ease),
+               background-color .3s var(--ease);
+  }
+  .sg-seg label{ position:relative; display:block; flex:1; min-width:0; z-index:1; }
   .sg-seg input{ position:absolute; width:0; height:0; opacity:0; }
   .sg-seg span, .sg-btns button{
     display:flex; align-items:center; justify-content:center;
@@ -352,10 +519,8 @@
   }
   .sg-seg span:hover, .sg-btns button:hover{ color:#fff; }
   .sg-seg span:active, .sg-btns button:active{ transform:scale(.97); }
-  /* 选中一律「白胶囊 + 深色字」；档位那一行例外，用档位色——那是有语义的颜色 */
-  .sg-seg input:checked + span{
-    background:#f5f5f7; border-color:#f5f5f7; color:#1d1d1f; font-weight:600;
-  }
+  /* 背景交给滑块，这里只管字色：默认白滑块配深字，主题那一行由 JS 换成主题色配白字 */
+  .sg-seg input:checked + span{ color:#1d1d1f; font-weight:600; }
   .sg-seg input:focus-visible + span,
   .sg-btns button:focus-visible{ outline:2px solid #f5f5f7; outline-offset:2px; }
   .sg-btns .sg-pick{
@@ -367,15 +532,15 @@
   .sg-btns .sg-pick > button{ padding:0 10px; overflow:hidden; }
   .sg-btns .k, .sg-btns .t{
     max-width:0; opacity:0; overflow:hidden;
-    transition:max-width .22s var(--ease), opacity .1s;
+    transition:max-width .22s var(--ease), margin-left .22s var(--ease), opacity .1s;
   }
   .sg-btns .sg-pick.on .k,
   .sg-btns .sg-pick.on .t{
     opacity:1;
-    transition:max-width .22s var(--ease), opacity .14s .12s;
+    transition:max-width .22s var(--ease), margin-left .22s var(--ease), opacity .14s .12s;
   }
   .sg-btns .sg-pick.on .k{ max-width:52px; }
-  .sg-btns .sg-pick.on .t{ max-width:220px; }
+  .sg-btns .sg-pick.on .t{ max-width:220px; margin-left:.32em; }  /* = 分隔符前一个空格 */
   .sg-btns .k{ margin-right:5px; }
   .sg-btns .n{ font-weight:600; }
   .sg-btns .sg-tip{
@@ -402,8 +567,12 @@
   .sg-btns .sg-pick:last-child:hover .sg-tip{ translate:0 0; }
   .sg-foot{
     display:flex; align-items:center; justify-content:space-between; gap:12px;
-    border-top:1px solid rgba(255,255,255,.14); padding-top:18px;
+    padding-top:6px;                    /* 分割线已挪到输出条上边，这里只留一点呼吸 */
     font-size:13px; color:#86868b;
+  }
+  /* 贴纸模式没有输出条，分割线得退回按钮这一行，否则底下光秃秃 */
+  .sg-out.hid + .sg-foot{
+    padding-top:18px; border-top:1px solid rgba(255,255,255,.14);
   }
   .sg-foot button{
     font-family:inherit; cursor:pointer; border-radius:980px;
@@ -418,26 +587,75 @@
   }
   .sg-mode:hover{ border-color:rgba(255,255,255,.5); }
   .sg-mode[aria-pressed="true"]{ background:#f5f5f7; border-color:#f5f5f7; color:#1d1d1f; font-weight:600; }
+  /* 格式下拉：跟深色模式那枚同一套胶囊外观，只是右端多一个 chevron；
+     原生 select 的弹出层交给系统，不另造轮子（零依赖 + 键盘可用） */
+  .sg-fmt{
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    border-radius:980px;               /* .sg-foot 的胶囊只给了 button，select 得自己补 */
+    font-family:inherit; padding-right:34px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'><path d='M1 1.4 L5 5.4 L9 1.4' fill='none' stroke='%23f5f5f7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  .sg-fmt option{ background:#1d1d1f; color:#f5f5f7; }
+  .sg-fmt:focus-visible{ outline:2px solid #f5f5f7; outline-offset:2px; }
+  /* 复制/下载按钮一律靠右：非贴纸模式只剩一枚按钮，space-between 会把它顶到左边 */
   .sg-dl{
+    margin-left:auto;
     border:0; background:#f5f5f7;
     padding:12px 24px; font-size:15px; font-weight:600; letter-spacing:0; color:#1d1d1f;
   }
   .sg-dl:hover{ background:#fff; }
   .sg-dl:disabled{ opacity:.6; cursor:progress; }
-  .sg-hint{
-    margin:0; font-size:13px; line-height:1.6; color:#86868b; letter-spacing:0; text-align:center;
+  /* 输出条：紧贴按钮上方，高度锁死一行——短了不留白、长了不出第二行，切选项时不跳 */
+  /* 分割线压在输出条上边：先划一条线，再给预览文字——线属于「下面是产出」这个语义 */
+  .sg-out{
+    display:block; margin:0 0 -6px;
+    border-top:1px solid rgba(255,255,255,.14); padding-top:14px;
+    font-family:var(--mono); font-size:13px; line-height:1.5; letter-spacing:0;
+    color:#f5f5f7; text-decoration:none; text-align:left;
+    /* 盒模型是 border-box，高度得把线与内边距算进去，否则正文区会被压掉 */
+    height:calc(1.5em + 15px);
+    overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   }
+  /* 它就是一行代码，不靠蓝色提示可点——蓝色会跟档位色抢戏，只留 hover 下划线 */
+  .sg-out[href]:hover{ text-decoration:underline; }
+  /* 文字那条不带 href（没地方可跳），别装成链接：去掉下划线与手型光标 */
+  .sg-out:not([href]){ cursor:default; }
+  .sg-out:not([href]):hover{ text-decoration:none; }
+  .sg-out:focus-visible{ outline:2px solid #f5f5f7; outline-offset:3px; }
+  .sg-out.hid{ display:none; }        /* 贴纸模式没有「复制」这回事 */
 
   /* ===== 页脚 ===== */
   footer{
-    background:var(--grey); padding:44px 0 60px;
+    background:var(--grey); padding:34px 0 46px;
     font-size:12px; line-height:1.7; color:var(--ink-3); letter-spacing:0;
   }
-  .foot-in{ max-width:980px; margin:0 auto; padding:0 22px; }
-  .foot-top{ display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid var(--hair); }
-  .foot-top a{ color:var(--ink-2); }
-  .foot-links{ display:flex; gap:22px; flex-wrap:wrap; }
-  .foot-meta{ padding-top:18px; }
+  /* 只留一行：仓库入口已在首屏和「开源与许可」里，许可说明也在那一节说过 */
+  .foot-in{
+    max-width:980px; margin:0 auto; padding:0 22px;
+    display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap;
+  }
+
+  /* ===== 开源与许可 ===== */
+  .open-cta{ margin-top:38px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  /* 全页唯一的实心按钮：苹果蓝胶囊，带一个会往前挪的箭头 */
+  .btn{
+    display:inline-flex; align-items:center; gap:.4em;
+    padding:12px 26px; border-radius:980px;
+    background:var(--ui-blue); color:#fff;
+    font-size:17px; font-weight:500; letter-spacing:0;
+    transition:background-color .2s var(--ease), transform .1s var(--ease);
+  }
+  .btn .gh-ico{ width:1.06em; height:1.06em; margin-right:0; }
+  .btn:hover{ background:#0077ed; text-decoration:none; }
+  .btn:active{ transform:scale(.97); }
+  .btn::after{
+    content:"›"; font-size:1.08em; line-height:1;
+    transition:transform .2s var(--ease);
+  }
+  .btn:hover::after{ transform:translateX(3px); }
+  .btn:focus-visible{ outline:2px solid var(--ui-blue); outline-offset:3px; }
+  .open-note{ margin:0; font-family:var(--mono); font-size:13px; letter-spacing:0; color:var(--ink-3); }
 
   /* ===== 滚动淡入：只做「上移 + 出现」，幅度小、时长长，不炫技 ===== */
   [data-reveal]{ opacity:0; transform:translateY(26px); }
@@ -461,9 +679,17 @@
     .quiz{ margin-top:52px; }
     .q{ padding:34px 0; }
     .q-row{ gap:12px; }
-    .seg{ display:flex; width:100%; }
-    .seg button{ flex:1; padding:9px 8px; }
+    .q-ghead{ display:none; }
+    .q-grow{ grid-template-columns:20px 1fr; column-gap:12px; padding:12px 0; }
+    .q-grow .lv-n{ grid-row:1 / span 2; }
+    .q-grow > p:nth-of-type(1){ grid-column:2; grid-row:1; }
+    .q-grow > p:nth-of-type(2){ grid-column:2; grid-row:2; margin-top:4px; }
+    .q-tag{ display:inline; margin-right:.42em; font-size:13px; font-weight:600; color:var(--ink-3); }
+    .seg{ display:flex; width:100%; --seg-cell:36px; --seg-gap:5px; }
+    .seg button{ flex:1; padding:0 8px; }
     .sg-panel{ --cell:36px; --cell-gap:5px; --rate-on:132px; }
+    .badge-track{ gap:24px; }
+    .badge-nav{ display:none; }          /* 窄屏没地方放圆钮，用「作品主题」那一行切 */
     .sg-btns .sg-pick.on .k{ max-width:0; }
     .sg-btns .sg-pick.on .t{ max-width:150px; }
     .nav nav{ gap:18px; }
@@ -477,8 +703,8 @@
     <a class="brand" href="#top">IIIA</a>
     <nav>
       <a href="#meaning">读懂标注</a>
-      <a href="#make">制作贴纸</a>
-      <a href="https://github.com/ErSanSan233/IIIA">GitHub</a>
+      <a href="#make">为作品标注</a>
+      <a href="#open"><svg class="gh-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
     </nav>
   </div>
 </header>
@@ -491,11 +717,12 @@
       <canvas class="hero-shot" id="heroShot" width="1000" height="800" role="img"
               aria-label="IIIA24* 贴纸示例" data-reveal></canvas>
       <p class="eyebrow" data-reveal>AI 参与指数</p>
-      <h1 data-reveal>一件作品里，<br>AI 参与了多少。</h1>
-      <p class="lede" data-reveal>IIIA 用一到两位数字，分别记下作品的想法与制作有多少交给了 AI。标在作品开头，读者一眼就能判断。</p>
+      <h1 data-reveal>一件作品里<span class="tq">，</span><br>AI 参与了多少<span class="tq">？</span></h1>
+      <p class="lede" data-reveal>AI 参与指数（Indice d’implication de l’intelligence artificielle，IIIA）<br>尝试快速量化和展示任何作品中的 AI 参与程度。</p>
       <div class="cta" data-reveal>
         <a class="link" href="#meaning">读懂一个标注</a>
-        <a class="link" href="#make">制作贴纸</a>
+        <a class="link" href="#make">为作品标注</a>
+        <a class="link" href="#open"><svg class="gh-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub 仓库</a>
       </div>
     </div>
   </section>
@@ -505,7 +732,7 @@
     <div class="in">
       <div class="sec-head" data-reveal>
         <p class="eyebrow">读懂标注</p>
-        <h2>数字讲两件事，<br>星号讲一件事。</h2>
+        <h2>数字讲两件事<span class="tq">，</span><br>星号讲一件事<span class="tq">。</span></h2>
         <p class="sec-lede">想法与制作各分 0 到 5 档，数字越大，AI 参与越深。回答下面两个问题，就能读懂你看到的任何标注。</p>
       </div>
 
@@ -531,42 +758,65 @@
           <div class="q-ans open" data-group="digits" data-ans="one">
             <div class="q-inner">
               <p>想法和制作的 AI 参与程度差不多（相差不超过 1 档），合并成一个数字，读整体参与程度：</p>
-              <div class="q-row"><span class="lv-n lv0">0</span><p><b>全程人工</b>——想法与制作都不用 AI。</p></div>
-              <div class="q-row"><span class="lv-n lv1">1</span><p><b>AI 只当参考</b>——出主意、找灵感，不直接产出内容。</p></div>
-              <div class="q-row"><span class="lv-n lv2">2</span><p><b>AI 打下手</b>——做语法检查、简单润色这类基础辅助。</p></div>
-              <div class="q-row"><span class="lv-n lv3">3</span><p><b>AI 干重活，人把关</b>——AI 完成大量内容，人工深度修改、审核并定稿。</p></div>
-              <div class="q-row"><span class="lv-n lv4">4</span><p><b>AI 主导，人打下手</b>——AI 跑通全流程，人工只做有限润色或局部调整。</p></div>
-              <div class="q-row"><span class="lv-n lv5">5</span><p><b>全程 AI</b>——AI 独立完成，人最多上传、发布。</p></div>
+              <div class="q-row"><span class="lv-n lv0">0</span><p><b>全程人工</b><span class="q-def">想法与制作都不用 AI。</span></p></div>
+              <div class="q-row"><span class="lv-n lv1">1</span><p><b>AI 只当参考</b><span class="q-def">出主意、找灵感，不直接产出内容。</span></p></div>
+              <div class="q-row"><span class="lv-n lv2">2</span><p><b>AI 打下手</b><span class="q-def">做语法检查、简单润色这类基础辅助。</span></p></div>
+              <div class="q-row"><span class="lv-n lv3">3</span><p><b>AI 干重活，人把关</b><span class="q-def">AI 完成大量内容，人工深度修改、审核并定稿。</span></p></div>
+              <div class="q-row"><span class="lv-n lv4">4</span><p><b>AI 主导，人打下手</b><span class="q-def">AI 跑通全流程，人工只做有限润色或局部调整。</span></p></div>
+              <div class="q-row"><span class="lv-n lv5">5</span><p><b>全程 AI</b><span class="q-def">AI 独立完成，人最多上传、发布。</span></p></div>
             </div>
           </div>
 
           <div class="q-ans" data-group="digits" data-ans="two">
             <div class="q-inner">
               <p>想法和制作差得远（相差 2 档及以上），两个数字都写出来：<b>第一位是想法，第二位是制作</b>。</p>
-              <div class="q-sub">第一位数字 · 想法是谁出的（主旨思路 Z）</div>
-              <div class="q-row"><span class="lv-n lv0">0</span><p>想法全由人构思，AI 未参与。</p></div>
-              <div class="q-row"><span class="lv-n lv1">1</span><p>人想，AI 只启发灵感、提供参考（如头脑风暴、热点分析）。</p></div>
-              <div class="q-row"><span class="lv-n lv2">2</span><p>人为主，AI 做基础辅助（如语法检查、润色提示）。</p></div>
-              <div class="q-row"><span class="lv-n lv3">3</span><p>AI 出大量内容（如分镜、论据、初稿），人深度修改、审核并定稿。</p></div>
-              <div class="q-row"><span class="lv-n lv4">4</span><p>AI 主导立意与叙事，人只做有限润色或局部调整。</p></div>
-              <div class="q-row"><span class="lv-n lv5">5</span><p>AI 独立产出全部想法，无人干预。</p></div>
-              <div class="q-sub">第二位数字 · 活是谁干的（实现过程 S）</div>
-              <div class="q-row"><span class="lv-n lv0">0</span><p>素材、剪辑、后期全部人工。</p></div>
-              <div class="q-row"><span class="lv-n lv1">1</span><p>人做，AI 只推荐素材（如图片、音乐片段）。</p></div>
-              <div class="q-row"><span class="lv-n lv2">2</span><p>人为主，AI 生成少量素材（如背景图、虚拟场景）。</p></div>
-              <div class="q-row"><span class="lv-n lv3">3</span><p>AI 出关键素材（如配图、配乐、片段），人严格筛选、整合。</p></div>
-              <div class="q-row"><span class="lv-n lv4">4</span><p>AI 生成大部分或全部素材，人只抽查。</p></div>
-              <div class="q-row"><span class="lv-n lv5">5</span><p>AI 全流程生成与合成，人只上传、发布。</p></div>
+              <div class="q-cols">
+                <div class="q-ghead">
+                  <span></span>
+                  <span>第一位数字 · 主旨思路</span>
+                  <span>第二位数字 · 实现过程</span>
+                </div>
+                <div class="q-grow">
+                  <span class="lv-n lv0">0</span>
+                  <p><span class="q-tag">主旨思路</span>想法全由人构思，AI 未参与。</p>
+                  <p><span class="q-tag">实现过程</span>素材、剪辑、后期全部人工。</p>
+                </div>
+                <div class="q-grow">
+                  <span class="lv-n lv1">1</span>
+                  <p><span class="q-tag">主旨思路</span>人想，AI 只启发灵感、提供参考（如头脑风暴、热点分析）。</p>
+                  <p><span class="q-tag">实现过程</span>人做，AI 只推荐素材（如图片、音乐片段）。</p>
+                </div>
+                <div class="q-grow">
+                  <span class="lv-n lv2">2</span>
+                  <p><span class="q-tag">主旨思路</span>人为主，AI 做基础辅助（如语法检查、润色提示）。</p>
+                  <p><span class="q-tag">实现过程</span>人为主，AI 生成少量素材（如背景图、虚拟场景）。</p>
+                </div>
+                <div class="q-grow">
+                  <span class="lv-n lv3">3</span>
+                  <p><span class="q-tag">主旨思路</span>AI 出大量内容（如分镜、论据、初稿），人深度修改、审核并定稿。</p>
+                  <p><span class="q-tag">实现过程</span>AI 出关键素材（如配图、配乐、片段），人严格筛选、整合。</p>
+                </div>
+                <div class="q-grow">
+                  <span class="lv-n lv4">4</span>
+                  <p><span class="q-tag">主旨思路</span>AI 主导立意与叙事，人只做有限润色或局部调整。</p>
+                  <p><span class="q-tag">实现过程</span>AI 生成大部分或全部素材，人只抽查。</p>
+                </div>
+                <div class="q-grow">
+                  <span class="lv-n lv5">5</span>
+                  <p><span class="q-tag">主旨思路</span>AI 独立产出全部想法，无人干预。</p>
+                  <p><span class="q-tag">实现过程</span>AI 全流程生成与合成，人只上传、发布。</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="q" data-reveal>
+        <div class="q no-rule" data-reveal>
           <h3>末尾有没有星号？</h3>
           <p class="q-hint">星号只说明作品的主题，与数字大小、制作方式都无关。</p>
           <div class="seg q-opts">
             <button type="button" data-q="star" data-a="yes">有星号</button>
-            <button type="button" data-q="star" data-a="no">没有星号</button>
+            <button type="button" data-q="star" data-a="no" class="on">没有星号</button>
           </div>
 
           <div class="q-ans" data-group="star" data-ans="yes">
@@ -575,7 +825,7 @@
             </div>
           </div>
 
-          <div class="q-ans" data-group="star" data-ans="no">
+          <div class="q-ans open" data-group="star" data-ans="no">
             <div class="q-inner">
               <p><b>作品不以 AI 为主题</b>，不加任何符号。</p>
             </div>
@@ -585,17 +835,61 @@
     </div>
   </section>
 
-  <!-- 我要制作贴纸 -->
+  <!-- 为我的作品标注 -->
   <section class="sec sec-dark" id="make">
     <div class="in">
       <div class="sec-head" data-reveal>
-        <p class="eyebrow">制作贴纸</p>
-        <h2>选好档位，<br>贴纸立刻生成。</h2>
-        <p class="sec-lede">四步定好标注，右侧实时出图，满意了直接下载 PNG。</p>
+        <p class="eyebrow">为我的作品标注</p>
+        <h2>选一种方式<span class="tq">，</span><br>标在你的作品上<span class="tq">。</span></h2>
+        <p class="sec-lede">文字、徽章、贴纸，三种形式任选。定好档位，直接复制或下载。</p>
       </div>
 
       <div class="sg-wrap" data-reveal>
-        <div class="sg-sticker" id="sgSticker">
+        <div class="sg-modebar">
+          <p class="sg-modelab">标注方式</p>
+          <div class="sg-seg sg-seg-mode" id="sgModeSeg">
+            <label><input type="radio" name="sgmode" value="text"><span>文字</span></label>
+            <label><input type="radio" name="sgmode" value="badge"><span>徽章</span></label>
+            <label><input type="radio" name="sgmode" value="sticker" checked><span>贴纸</span></label>
+          </div>
+        </div>
+
+        <div class="sg-stage">
+
+          <!-- 文字：只留一枚最终档位的大字，其余（备选写法、括注）都交给按钮上方那条输出 -->
+          <div class="sg-view view-text" id="viewText">
+            <div class="text-code" id="textCode">IIIA5</div>
+          </div>
+
+          <!-- 徽章：两张表左右排开，选中的居中，另一张压暗在边上；点边上那张可换到中间 -->
+          <div class="sg-view view-badge" id="viewBadge">
+            <div class="badge-viewport">
+              <div class="badge-track" id="badgeTrack">
+                <div class="badge-slide" data-ai="0">
+                  <div class="badge-grid" data-star="0"></div>
+                </div>
+                <div class="badge-slide" data-ai="1">
+                  <div class="badge-grid" data-star="1"></div>
+                </div>
+              </div>
+              <button class="badge-nav prev" id="badgePrev" type="button" aria-label="上一张：不含修正符号">
+                <svg width="11" height="19" viewBox="0 0 11 19" aria-hidden="true">
+                  <path d="M9.2 1.2 L2 9.5 L9.2 17.8" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="badge-nav next" id="badgeNext" type="button" aria-label="下一张：含修正符号">
+                <svg width="11" height="19" viewBox="0 0 11 19" aria-hidden="true">
+                  <path d="M1.8 1.2 L9 9.5 L1.8 17.8" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 贴纸 -->
+          <div class="sg-view view-sticker" id="viewSticker">
+            <div class="sg-sticker" id="sgSticker">
           <div class="sg-header">人工智能参与指数</div>
           <div class="sg-card" id="sgCard">
             <div class="sg-chart">
@@ -608,7 +902,10 @@
             <div class="sg-lab sg-lleft">人工制作</div>
             <div class="sg-lab sg-lright">自动生成</div>
           </div>
-          <div class="sg-urlband" id="sgUrlBand"><span id="sgUrlText">ersansan233.github.io/IIIA</span></div>
+              <div class="sg-urlband" id="sgUrlBand"><span id="sgUrlText">ersansan233.github.io/IIIA</span></div>
+            </div>
+          </div>
+
         </div>
 
         <div class="sg-panel">
@@ -627,19 +924,41 @@
             <div class="sg-bhead"><span class="sg-step">3</span><span class="sg-bname">实现过程</span></div>
             <div class="sg-btns" id="sgSBtns"></div>
           </div>
-          <div class="sg-block">
+          <div class="sg-block" id="sgUrlBlock">
             <div class="sg-bhead"><span class="sg-step">4</span><span class="sg-bname">说明项</span></div>
             <div class="sg-seg" id="sgUrlSeg">
               <label><input type="radio" name="sgurl" value="0" checked><span>无</span></label>
               <label><input type="radio" name="sgurl" value="1"><span>添加网址</span></label>
             </div>
           </div>
+          <!-- 输出条：文字/徽章两种方式的「复制出去是什么」，紧贴按钮上方，锁一行高 -->
+          <a class="sg-out" id="sgOut" href="https://ersansan233.github.io/IIIA/"
+             target="_blank" rel="noopener"></a>
           <div class="sg-foot">
+            <select class="sg-mode sg-fmt" id="sgFmt" aria-label="徽章代码格式">
+              <option value="md">Markdown</option>
+              <option value="html">HTML</option>
+              <option value="url">纯网址</option>
+            </select>
             <button class="sg-mode" id="sgDarkToggle" aria-pressed="false">深色模式关</button>
             <button class="sg-dl" id="sgDownloadBtn">下载贴纸</button>
           </div>
-          <p class="sg-hint">下载的是 1000px 宽的 PNG。标在作品开头，观众打开即可看到。</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 开源与许可 -->
+  <section class="sec" id="open">
+    <div class="in">
+      <div class="sec-head" data-reveal>
+        <p class="eyebrow">开源与许可</p>
+        <h2>一份建议<span class="tq">，</span><br>不设门槛<span class="tq">。</span></h2>
+        <p class="sec-lede">IIIA 只是一份建议，没有认证机构，也不做审查——用不用、怎么用，由创作者自己决定。规范全文、档位表和版本记录都放在 GitHub 仓库里，遵循 MIT 许可，可自由使用、修改和分发。</p>
+      </div>
+      <div class="open-cta" data-reveal>
+        <a class="btn" href="https://github.com/ErSanSan233/IIIA" target="_blank" rel="noopener"><svg class="gh-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>前往 GitHub 仓库</a>
+        <p class="open-note">github.com/ErSanSan233/IIIA</p>
       </div>
     </div>
   </section>
@@ -648,31 +967,25 @@
 
 <footer>
   <div class="foot-in">
-    <div class="foot-top">
-      <div>IIIA · AI 参与指数</div>
-      <div class="foot-links">
-        <a href="https://github.com/ErSanSan233/IIIA">GitHub</a>
-        <a href="https://github.com/ErSanSan233/IIIA/blob/main/CHANGELOG.md">更新日志</a>
-        <a href="https://github.com/ErSanSan233/IIIA/blob/main/README.md">完整规范</a>
-      </div>
-    </div>
-    <div class="foot-meta">
-      IIIA 是一份建议性质的尝试，没有认证机构；是否采用、如何采用，由创作者自愿决定。本仓库自标 IIIA 3*。MIT 许可。
-    </div>
+    <div>IIIA · AI 参与指数</div>
+    <div>本仓库自标 IIIA 3*</div>
   </div>
 </footer>
 
 <script>
 /* ================= 贴纸模块（类名全部 sg- 前缀，与页面样式隔离） ================= */
 var COLORS = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
-var SG_LABEL_Z = ["无AI参与","AI提供参考","AI辅助创作","人类全审查","人类有限干预","全AI"];
-var SG_LABEL_S = ["全手搓","AI辅助灵感","个别AI素材","人类全审查","人类有限干预","全AI"];
+/* 档名：中英文之间留空格（「全 AI」不是「全AI」），与正文排版一致 */
+var SG_LABEL_Z = ["无 AI 参与","AI 提供参考","AI 辅助创作","人类全审查","人类有限干预","全 AI"];
+var SG_LABEL_S = ["全手搓","AI 辅助灵感","个别 AI 素材","人类全审查","人类有限干预","全 AI"];
 var GAP = 11.24, X0 = 25, W1 = 62.4;
 
 /* 面板躺在黑底上，未选中的格子必须透明——否则会在深色区块里浮出灰方块 */
 var IDLE_BG = "transparent", IDLE_FG = "rgba(255,255,255,.62)", IDLE_BD = "transparent";
 
-var SG = { Z:5, S:5, ai:false, url:false, code:"5" };  // url = 说明项：卡下加网址条，贴纸变 500×450
+/* mode: text | badge | sticker；url = 说明项：卡下加网址条，贴纸变 500×450 */
+/* fmt = 徽章代码格式：md(Hugo/GitHub 通用) / html / url(裸网址，粘到支持图片的地方) */
+var SG = { Z:5, S:5, ai:false, url:false, code:"5", mode:"sticker", fmt:"md" };
 
 /* 尺寸常量的唯一来源是 CSS（与 sticker.html 同名变量，改样式即可，不用改 JS） */
 var SG_ROOT = getComputedStyle(document.documentElement);
@@ -840,10 +1153,269 @@ function sgRender(){
   });
 
   SG.code = code;
-  document.getElementById("sgDownloadBtn").textContent = "下载 IIIA" + code + " 贴纸";
   sgPaintBtns("sgZBtns", Z);
   sgPaintBtns("sgSBtns", S);
+  sgRenderMode();
 }
+
+/* ================= 标注方式：文字 / 徽章 / 贴纸 ================= */
+var sgViews = {
+  text:    document.getElementById("viewText"),
+  badge:   document.getElementById("viewBadge"),
+  sticker: document.getElementById("viewSticker")
+};
+var sgStage = document.querySelector(".sg-stage");
+
+/* 选中指示是一枚会平移的滑块：位置与宽度由 JS 定量，CSS 只负责 transition，
+   所以换选项是「走过去」，不是原地渐变出一块底色 */
+var THEME_COLORS = { "0":"#2aa96f", "1":"#4d6bfe" };   // 非 AI 主题=绿，AI 主题=IIIA5 的蓝紫
+document.querySelectorAll(".sg-seg").forEach(function(seg){
+  var p = document.createElement("div");
+  p.className = "sg-seg-pill";
+  seg.insertBefore(p, seg.firstChild);
+});
+function sgSegPaint(seg){
+  var pill = seg.querySelector(".sg-seg-pill");
+  var checked = seg.querySelector("input:checked");
+  if (!pill || !checked) return;
+  var lab = checked.parentElement;
+  pill.style.width = lab.offsetWidth + "px";
+  pill.style.transform = "translateX(" + lab.offsetLeft + "px)";
+  var themed = (seg.id === "sgThemeSeg");
+  var col = themed ? THEME_COLORS[checked.value] : "#f5f5f7";
+  pill.style.background = col;
+  /* 主题那两色是饱和的语义色，一律配白字：交给 inkOn 算的话，
+     绿会算出深字、蓝紫算出白字，两档不一致，看着就不协调了 */
+  var ink = themed ? "#fff" : inkOn(col);
+  seg.querySelectorAll("label span").forEach(function(sp){
+    sp.style.color = sp.parentElement.querySelector("input").checked ? ink : "";
+  });
+}
+function sgSegPaintAll(){ document.querySelectorAll(".sg-seg").forEach(sgSegPaint); }
+
+/* 预览区高度：三种内容高矮不一，定量写进 stage 再走 transition——
+   换方式时布局是移过去的，下面面板不会被顶得闪一下 */
+function sgSyncStage(){
+  var v = sgViews[SG.mode];
+  if (!v) return;
+  /* 贴纸层特殊：切说明项时它的 height 正在过渡，offsetHeight 读到的是中间值，
+     直接按「目标高 × 缩放」算，stage 才能跟贴纸同步长高 */
+  sgStage.style.height = (SG.mode === "sticker")
+    ? (sgH() * sgFitS).toFixed(1) + "px"
+    : v.offsetHeight + "px";
+}
+
+var badgePrev = document.getElementById("badgePrev");
+var badgeNext = document.getElementById("badgeNext");
+function sgBadgeNav(){
+  badgePrev.disabled = !SG.ai;
+  badgeNext.disabled = !!SG.ai;
+}
+badgePrev.onclick = function(){ if (SG.ai){ SG.ai = false; sgSyncThemeSeg(); sgRender(); } };
+badgeNext.onclick = function(){ if (!SG.ai){ SG.ai = true; sgSyncThemeSeg(); sgRender(); } };
+
+addEventListener("resize", function(){ sgSegPaintAll(); sgSyncStage(); });
+var sgDarkW    = document.getElementById("sgDarkToggle");
+var sgFmt      = document.getElementById("sgFmt");
+var textCode   = document.getElementById("textCode");
+var sgMainBtn  = document.getElementById("sgDownloadBtn");
+
+/* 徽章表：两张，一张不带星一张带星，左右排开做成一条轨道。
+   8×8 网格，全部显式定位：col1=主旨思路 col2=行号 col3–8=徽章；row1=实现过程 row2=列号
+   row3–8=徽章。左上角留空（原来是「Z \ S」）——两个轴名改用汉字，各自居中。
+   颜色取 Z/S 的较大位，与 README 的拼接模板同规则 */
+var badgeTrack  = document.getElementById("badgeTrack");
+var badgeView   = badgeTrack.parentElement;
+var badgeSlides = [].slice.call(document.querySelectorAll(".badge-slide"));
+var badgeCells  = [];                       // badgeCells[带星?1:0][z][s]
+document.querySelectorAll(".badge-grid").forEach(function(grid){
+  var si = grid.getAttribute("data-star") === "1" ? 1 : 0;
+  var rows = [];
+  function put(cls, txt, col, row){
+    var d = document.createElement("div");
+    d.className = cls; d.textContent = txt;
+    d.style.gridColumn = col; d.style.gridRow = row;
+    grid.appendChild(d);
+    return d;
+  }
+  put("bg-axis bg-axis-top", "实现过程", "3 / -1", "1");
+  for (var s0 = 0; s0 < 6; s0++) put("bh", String(s0), String(3 + s0), "2");
+  put("bg-axis bg-axis-left", "主旨思路", "1", "3 / -1");
+  for (var z = 0; z < 6; z++){
+    put("bh", String(z), "2", String(3 + z));
+    rows[z] = [];
+    for (var s = 0; s < 6; s++){
+      var cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "bcell";
+      cell.style.gridColumn = String(3 + s);
+      cell.style.gridRow    = String(3 + z);
+      var bdg = document.createElement("span");
+      bdg.className = "bdg";
+      var i = document.createElement("i"); i.textContent = "IIIA";
+      var b = document.createElement("b");
+      bdg.appendChild(i); bdg.appendChild(b);
+      cell.appendChild(bdg);
+      /* 闭包按值捕获，否则 36 个格子会全部指向最后一次循环的 z / s。
+         点边上那张的格子 = 切到那张表 + 选中这一枚；只点空白处才单纯换主题 */
+      (function(zz, ss, sidx){
+        cell.onclick = function(e){
+          e.stopPropagation();
+          if (sidx !== (SG.ai ? 1 : 0)){ SG.ai = (sidx === 1); sgSyncThemeSeg(); }
+          SG.Z = zz; SG.S = ss; sgRender();
+        };
+      })(z, s, si);
+      grid.appendChild(cell);
+      rows[z][s] = { el:cell, code:b };
+    }
+  }
+  badgeCells[si] = rows;
+});
+
+/* 把选中的那张推到正中：offsetLeft 是布局值，不受 transform 影响，可放心拿来做算术 */
+function badgeLayout(){
+  var vw = badgeView.clientWidth;
+  if (!vw) return;                       // 该层正被藏起来（量到 0），别把轨道推飞
+  var sl = badgeSlides[SG.ai ? 1 : 0];
+  var off = vw / 2 - (sl.offsetLeft + sl.offsetWidth / 2);
+  badgeTrack.style.transform = "translateX(" + off.toFixed(1) + "px)";
+}
+addEventListener("resize", badgeLayout);
+if (window.ResizeObserver) new ResizeObserver(badgeLayout).observe(badgeView);
+
+/* 点边上那张 = 换主题（居中的那张交给格子处理，不拦） */
+badgeSlides.forEach(function(sl, i){
+  sl.onclick = function(){
+    if (i === (SG.ai ? 1 : 0)) return;
+    SG.ai = (i === 1);
+    sgSyncThemeSeg();
+    sgRender();
+  };
+});
+
+function badgeUrlOf(code){
+  return "https://img.shields.io/badge/IIIA-" + code +
+         "-" + COLORS[Math.max(SG.Z, SG.S)].slice(1).toUpperCase();
+}
+/* 说明项在三种方式下的落点不同，但都是「把说明网址加进去」：
+   文字 → 括注；徽章 → 包成可点的 Markdown；贴纸 → 卡下多一条网址带 */
+var REF_SITE = "ersansan233.github.io/IIIA";      // 贴纸上印的短网址
+var REF_HREF = "https://ersansan233.github.io/IIIA/";
+function refNote(){ return SG.url ? "（参见 " + REF_SITE + " ）" : ""; }
+/* 输出必须是「能直接粘走就用」的整段代码，光给一个网址不算——
+   说明项打开时再在外层套上指向 IIIA 说明页的链接 */
+function badgeOut(){
+  var u = badgeUrlOf(SG.code);
+  if (SG.fmt === "html"){
+    var img = '<img src="' + u + '" alt="IIIA ' + SG.code + '">';
+    return SG.url ? '<a href="' + REF_HREF + '">' + img + '</a>' : img;
+  }
+  if (SG.fmt === "url") return u;                       // 裸网址没法套链接，说明项对它无效
+  var md = "![IIIA " + SG.code + "](" + u + ")";
+  return SG.url ? "[" + md + "](" + REF_HREF + ")" : md;
+}
+function sgOutText(){ return (SG.mode === "badge") ? badgeOut() : ("IIIA" + SG.code + refNote()); }
+
+/* 输出条打字机：每次改动都重打一遍，但整条控制在 ~250ms 内——
+   长文本一次多吐几个字，不然徽章那种长 URL 会打出拖沓感 */
+var sgOut = document.getElementById("sgOut");
+var sgTypeTimer = null;
+var sgNoMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function sgTypeStop(){ if (sgTypeTimer){ clearInterval(sgTypeTimer); sgTypeTimer = null; } }
+function sgType(txt){
+  sgTypeStop();
+  if (sgNoMotion){ sgOut.textContent = txt; return; }
+  var step = Math.max(1, Math.ceil(txt.length / 20));
+  var i = 0;
+  sgOut.textContent = "";
+  sgTypeTimer = setInterval(function(){
+    i += step;
+    if (i >= txt.length){ sgOut.textContent = txt; sgTypeStop(); return; }
+    sgOut.textContent = txt.slice(0, i);
+  }, 12);
+}
+
+function sgRenderMode(){
+  var mode = SG.mode, ai = SG.ai, code = SG.code;
+
+  Object.keys(sgViews).forEach(function(k){ sgViews[k].classList.toggle("on", k === mode); });
+
+  textCode.textContent = "IIIA" + code;      // 大字只给最终档位，其余都在下面那条输出里
+  var note = refNote();
+
+  /* 输出条：贴纸模式复制的是 PNG，没有可展示的文本，整条收起 */
+  if (mode === "sticker"){
+    sgTypeStop();
+    sgOut.classList.add("hid");
+    sgOut.removeAttribute("href");
+  } else {
+    sgOut.classList.remove("hid");
+    /* 徽章那条本身就是链接（点了去 IIIA 说明页），文字那条不带 href，不可点 */
+    if (mode === "badge") sgOut.setAttribute("href", REF_HREF);
+    else sgOut.removeAttribute("href");
+    sgType(sgOutText());
+  }
+
+  /* 徽章表：两张内容一样、只差末尾那个星号；居中的那张才亮，另一张压暗在边上 */
+  var onSlide = ai ? 1 : 0;
+  for (var si = 0; si < 2; si++){
+    var star = si ? "*" : "";
+    for (var z = 0; z < 6; z++){
+      for (var s = 0; s < 6; s++){
+        var c = badgeCells[si][z][s];
+        var cc = codeOf(z, s) + star;
+        c.code.textContent = cc;
+        c.code.style.background = COLORS[Math.max(z, s)];
+        c.el.classList.toggle("on", si === onSlide && z === SG.Z && s === SG.S);
+        c.el.setAttribute("aria-label", "想法 " + z + " 制作 " + s + "，IIIA" + cc);
+      }
+    }
+  }
+  badgeSlides.forEach(function(sl, i){ sl.classList.toggle("on", i === onSlide); });
+  if (mode === "badge") badgeLayout();   // 刚从隐藏变可见，宽度这时才量得到
+
+  /* 说明项三种方式都用得上（只是落点不同）；深色模式归贴纸、格式归徽章 */
+  sgDarkW.style.display = (mode === "sticker") ? "" : "none";
+  sgFmt.style.display   = (mode === "badge")   ? "" : "none";
+  sgFmt.value = SG.fmt;          // ?fmt= 可能已改过默认值，控件状态要跟上
+
+  sgMainBtn.textContent = mode === "sticker" ? ("下载 IIIA" + code + " 贴纸")
+                        : mode === "badge"   ? "复制徽章链接"
+                        : "复制文本";
+
+  sgBadgeNav();
+  sgSegPaintAll();
+  sgFit(true);      // 换层后贴纸的可见宽度可能变了，重量一次
+  sgSyncStage();    // 量高度要放在 fit 之后：缩放过贴纸，高度才算得准
+}
+
+function sgFallbackCopy(txt, done){
+  var ta = document.createElement("textarea");
+  ta.value = txt;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) { /* 复制失败就留原状 */ }
+  document.body.removeChild(ta);
+}
+
+function sgCopyOut(){
+  var txt = sgOutText();   /* 复制的必须跟输出条上打出来的一字不差 */
+  function done(){
+    sgMainBtn.textContent = "已复制";
+    setTimeout(sgRenderMode, 1600);   // 交给 render 复位，免得文案被写死
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ sgFallbackCopy(txt, done); });
+  } else {
+    sgFallbackCopy(txt, done);
+  }
+}
+
+document.querySelectorAll("#sgModeSeg input").forEach(function(r){
+  r.onchange = function(e){ if (e.target.checked){ SG.mode = e.target.value; sgRender(); } };
+  r.checked = (r.value === SG.mode);
+});
 
 function sgMakeBtns(hostId, labels, onPick){
   var host = document.getElementById(hostId);
@@ -852,10 +1424,13 @@ function sgMakeBtns(hostId, labels, onPick){
     pick.className = "sg-pick";
     var b = document.createElement("button");
     b.type = "button";
-    b.setAttribute("aria-label", "档位" + i + "·" + label);
+    b.setAttribute("aria-label", "档位 " + i + " · " + label);
     var k = document.createElement("span"); k.className = "k"; k.textContent = "档位";
     var n = document.createElement("span"); n.className = "n"; n.textContent = i;
-    var t = document.createElement("span"); t.className = "t"; t.textContent = "·" + label;
+    /* 分隔符两侧各留一个空格（「档位 5 · 全 AI」）。
+       ⚠️ 按钮是 flex 容器，.t 被块化成 flex item，行首空格会被 white-space:normal 吃掉，
+       所以前面的空格靠 CSS margin 补，文本里只写「· 全 AI」 */
+    var t = document.createElement("span"); t.className = "t"; t.textContent = "· " + label;
     var tip = document.createElement("span"); tip.className = "sg-tip"; tip.textContent = label;
     b.appendChild(k); b.appendChild(n); b.appendChild(t);
     pick.appendChild(b); pick.appendChild(tip);
@@ -866,14 +1441,23 @@ function sgMakeBtns(hostId, labels, onPick){
 sgMakeBtns("sgZBtns", SG_LABEL_Z, function(v){ SG.Z = v; });
 sgMakeBtns("sgSBtns", SG_LABEL_S, function(v){ SG.S = v; });
 
+function sgSyncThemeSeg(){
+  document.querySelectorAll("#sgThemeSeg input").forEach(function(r){
+    r.checked = ((r.value === "1") === SG.ai);
+  });
+}
 document.querySelectorAll("#sgThemeSeg input").forEach(function(r){
   r.onchange = function(e){ if (e.target.checked){ SG.ai = e.target.value === "1"; sgRender(); } };
-  r.checked = ((r.value === "1") === SG.ai);   // ?level= 可能已改过默认值，控件状态要跟上
 });
+sgSyncThemeSeg();   // ?level= 可能已改过默认值，控件状态要跟上
+
+sgFmt.onchange = function(){ SG.fmt = sgFmt.value; sgRender(); };
 
 /* 说明项：只切 CSS 变量 --foot（贴纸高、卡片下边、条带高都挂在它上面），
-   一次赋值三处联动；柱区几何不受影响，不必重排 */
-function sgApplyUrl(){ sgSticker.classList.toggle("has-url", SG.url); sgFit(true); }
+   一次赋值三处联动；柱区几何不受影响，不必重排。
+   ⚠️ 必须走 sgRenderMode：文字的括注、徽章的代码、滑块位置、stage 高度都挂在 SG.url 上，
+   只切 class 的话滑块不会动——它就是这么「没有动画反馈」的 */
+function sgApplyUrl(){ sgSticker.classList.toggle("has-url", SG.url); sgRenderMode(); }
 document.querySelectorAll("#sgUrlSeg input").forEach(function(r){
   r.onchange = function(e){ if (e.target.checked){ SG.url = e.target.value === "1"; sgApplyUrl(); } };
   r.checked = ((r.value === "1") === SG.url);
@@ -884,11 +1468,14 @@ sgApplyUrl();
    量的是容器实际宽度，且在宽度真正变化时才重算——首屏布局未必已定，光靠 resize 会量错；
    transform 不参与布局、margin-bottom 又只改高度，所以按宽度早退不会自激 */
 var sgFitW = -1;
+var sgFitS = 1;                                    // 最近一次的缩放，stage 定高度要用
 function sgFit(force){
   var avail = sgSticker.parentElement.clientWidth;
+  if (!avail) return;                            // 该层正被藏起来（量到 0），别把贴纸缩成 0
   if (!force && avail === sgFitW) return;
   sgFitW = avail;
   var s = Math.min(1, avail / 500);
+  sgFitS = s;
   sgSticker.style.transformOrigin = "top center";
   if (s < 1){
     sgSticker.style.transform = "scale(" + s.toFixed(4) + ")";
@@ -1015,9 +1602,10 @@ function drawSticker(ctx, scale, opts){
   ctx.restore();
 }
 
-/* PNG 导出 */
+/* PNG 导出（贴纸）；文字与徽章走复制 */
 var sgDlBtn = document.getElementById("sgDownloadBtn");
 sgDlBtn.onclick = function(){
+  if (SG.mode !== "sticker"){ sgCopyOut(); return; }
   var label = sgDlBtn.textContent;
   sgDlBtn.disabled = true;
   sgDlBtn.textContent = "生成中…";
@@ -1038,6 +1626,24 @@ sgDlBtn.onclick = function(){
 
 /* ================= 问卷式解读 ================= */
 (function(){
+  /* 两条选项轨道各插一枚滑块，跟标注面板那套一致：换选项是滑块走过去 */
+  var segs = [].slice.call(document.querySelectorAll(".seg.q-opts"));
+  segs.forEach(function(seg){
+    var p = document.createElement("div");
+    p.className = "seg-pill";
+    seg.insertBefore(p, seg.firstChild);
+  });
+  function paint(seg){
+    var pill = seg.querySelector(".seg-pill");
+    var on = seg.querySelector("button.on");
+    if (!pill) return;
+    if (!on){ pill.style.opacity = "0"; return; }
+    pill.style.opacity = "1";
+    pill.style.width = on.offsetWidth + "px";
+    pill.style.transform = "translateX(" + on.offsetLeft + "px)";
+  }
+  function paintAll(){ segs.forEach(paint); }
+
   document.querySelectorAll(".q-opts button").forEach(function(b){
     b.onclick = function(){
       var g = b.getAttribute("data-q"), a = b.getAttribute("data-a");
@@ -1047,8 +1653,13 @@ sgDlBtn.onclick = function(){
       document.querySelectorAll('.q-ans[data-group="' + g + '"]').forEach(function(p){
         p.classList.toggle("open", p.getAttribute("data-ans") === a);
       });
+      paintAll();
     };
   });
+
+  paintAll();
+  addEventListener("resize", paintAll);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(paintAll);
 })();
 
 /* ================= 滚动淡入 ================= */
@@ -1076,17 +1687,24 @@ sgDlBtn.onclick = function(){
     var s = (m[2] !== "") ? parseInt(m[2], 10) : z;
     var star = (m[3] === "*");
     SG.Z = z; SG.S = s; SG.ai = star;
-    document.querySelectorAll("#sgThemeSeg input").forEach(function(r){
-      r.checked = ((r.value === "1") === star);
-    });
   }
   if (qs && qs.get("url") === "1") SG.url = true;
   document.querySelectorAll("#sgUrlSeg input").forEach(function(r){
     r.checked = ((r.value === "1") === SG.url);
   });
+  /* ?mode=text|badge|sticker 可直达某一种标注方式 */
+  var md = qs ? String(qs.get("mode") || "") : "";
+  if (md === "text" || md === "badge" || md === "sticker") SG.mode = md;
+  var fm = qs ? String(qs.get("fmt") || "") : "";
+  if (fm === "md" || fm === "html" || fm === "url") SG.fmt = fm;
+  document.querySelectorAll("#sgModeSeg input").forEach(function(r){
+    r.checked = (r.value === SG.mode);
+  });
   sgApplyUrl();
+  sgSyncThemeSeg();
   sgRender();
   sgFit();
+  badgeLayout();
 
   /* 首屏那张贴纸：拿生成器同一套函数现画一张 IIIA24*，不给仓库加任何位图 */
   var hero = document.getElementById("heroShot");
