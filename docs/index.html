@@ -6,13 +6,21 @@
 <title>IIIA · 作品 AI 参与度</title>
 <style>
   :root{
-    --font:"Noto Sans CJK SC","Noto Sans SC","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-    --ink:#0d1117; --ink-2:#414a55; --ink-3:#7a828d;
-    --line:#e6e9ee; --line-2:#eef1f5; --bg:#f4f6f8; --card:#fff;
-    --blue:#41b0f6;
+    /* 页面字体走系统族（苹果观感的来源）；贴纸内部另有指定，别混 */
+    --font:-apple-system, BlinkMacSystemFont, "SF Pro SC", "SF Pro Text", "PingFang SC",
+           "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --ink:#1d1d1f; --ink-2:#6e6e73; --ink-3:#86868b;
+    --hair:#d2d2d7;                 /* 苹果的分隔线灰 */
+    --bg:#fff; --grey:#f5f5f7;      /* 区块交替底色 */
+    --ui-blue:#0071e3;              /* 页面 UI 的强调色，只用在链接与主按钮 */
+    --blue:#41b0f6;                 /* 贴纸外框色：canvas 导出里写死了同值，改这里要同步 JS */
+
     --c0:#fbb47e; --c1:#d39390; --c2:#b660a8; --c3:#b84ccc; --c4:#8e61e5; --c5:#4d6bfe;
+
     --dur:.22s; --ease:cubic-bezier(.4,0,.2,1);
+    --reveal:cubic-bezier(.2,.7,.2,1);
 
     /* ↓ 以下为贴纸模块专用（与 docs/sticker.html 保持同名同值，改一处要改两处） */
     --fs-title:50px;              /* 标题字号；缺口里的代码跟它同字号 */
@@ -24,93 +32,177 @@
     --fs-url:22px;                /* 网址字号：等宽 0.6em 宽，27 字 × 0.6 × 22 ≈ 371px */
     --ls-url:.5px;
     --font-mono:ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    /* 贴纸内文字：导出 PNG 用的就是这个栈，页面必须同栈，否则预览与出图不一致 */
+    --font-sticker:"Noto Sans CJK SC","Noto Sans SC","PingFang SC",sans-serif;
   }
   *{ box-sizing:border-box; }
   html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
   body{
     margin:0; background:var(--bg); color:var(--ink);
-    font-family:var(--font); font-size:16px; line-height:1.75;
+    font-family:var(--font); font-size:17px; line-height:1.5;
     -webkit-font-smoothing:antialiased;
+    letter-spacing:-.01em;
   }
-  a{ color:var(--ink); }
-  code{
-    font-family:var(--mono);
-    font-size:.92em; background:#eef1f5; border-radius:5px; padding:1px 6px;
-  }
-  .wrap{ max-width:820px; margin:0 auto; padding:0 24px 80px; }
+  a{ color:var(--ui-blue); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  h1,h2,h3{ margin:0; font-weight:600; letter-spacing:-.015em; }
+  /* 行内代码：只换等宽族，不加底色块——底色块一多就变成色框堆砌 */
+  code{ font-family:var(--mono); font-size:.88em; letter-spacing:0; }
 
-  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:20px 0; font-size:14px; }
-  .topbar .brand{ font-weight:700; letter-spacing:.04em; }
-  .topbar .brand span{ color:var(--ink-3); font-weight:500; margin-left:8px; }
-  .topbar nav a{ color:var(--ink-2); text-decoration:none; }
-  .topbar nav a:hover{ text-decoration:underline; }
+  /* ===== 导航：苹果那层半透明毛玻璃 ===== */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(255,255,255,.72);
+    backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid rgba(0,0,0,.07);
+  }
+  .nav-in{
+    max-width:980px; margin:0 auto; height:48px; padding:0 22px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .nav .brand{ font-size:15px; font-weight:600; color:var(--ink); letter-spacing:.02em; }
+  .nav .brand:hover{ text-decoration:none; }
+  .nav nav{ display:flex; gap:26px; }
+  .nav nav a{ font-size:13px; color:var(--ink); opacity:.85; }
+  .nav nav a:hover{ opacity:1; text-decoration:none; }
+
+  /* ===== 区块骨架 ===== */
+  .sec{ padding:120px 0; scroll-margin-top:48px; }
+  .sec-grey{ background:var(--grey); }
+  .sec-dark{ background:#000; color:#f5f5f7; }
+  .sec-dark h2,.sec-dark h3{ color:#f5f5f7; }
+  .in{ max-width:980px; margin:0 auto; padding:0 22px; }
+
+  .eyebrow{
+    margin:0 0 14px; font-size:13px; font-weight:600; letter-spacing:.06em;
+    color:var(--ink-3);
+  }
+  .sec-dark .eyebrow{ color:#86868b; }
+  .sec-head{ max-width:760px; margin:0 auto; text-align:center; }
+  .sec-head h2{
+    font-size:clamp(30px, 4.6vw, 46px); line-height:1.1;
+  }
+  .sec-lede{
+    margin:18px 0 0; font-size:19px; line-height:1.55; color:var(--ink-2);
+    letter-spacing:0;
+  }
+  .sec-dark .sec-lede{ color:#a1a1a6; }
 
   /* ===== 首屏 ===== */
-  .hero{ padding:64px 0 0; }
+  /* 贴纸在最上面当主视觉，所以顶部留白收一点、底部补足，让文字落在视线中上方 */
+  .hero{ padding:64px 0 100px; text-align:center; }
   .hero h1{
-    margin:0; font-size:40px; font-weight:700; line-height:1.4; letter-spacing:.01em;
-    max-width:16em;
+    font-size:clamp(38px, 7.2vw, 68px); line-height:1.06; letter-spacing:-.025em;
+    max-width:14em; margin:0 auto;
   }
-  .hero h1 code{ font-size:.82em; padding:0 4px; background:none; }
-  .gos{ display:flex; flex-direction:column; gap:12px; margin-top:36px; max-width:440px; }
-  .go-btn{
-    display:flex; align-items:baseline; justify-content:space-between; gap:16px;
-    border:1px solid var(--line); border-radius:12px; padding:16px 20px;
-    background:#fff; text-decoration:none; color:var(--ink);
-    font-size:16px; font-weight:700;
-    transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+  .hero .lede{
+    margin:22px auto 0; max-width:34em;
+    font-size:clamp(17px, 2.2vw, 21px); line-height:1.5; color:var(--ink-2); letter-spacing:0;
   }
-  .go-btn:hover{
-    border-color:#c8cfd8; transform:translateY(-2px);
-    box-shadow:0 12px 26px -22px rgba(16,24,40,.6); text-decoration:none;
+  .cta{ display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap; margin-top:34px; }
+  /* 首屏两个入口一律蓝字加箭头，不摆实心按钮——画面里唯一的主角应该是贴纸本身 */
+  .link{ font-size:17px; letter-spacing:0; }
+  .link::after{
+    content:"\2009›"; display:inline-block;
+    transition:transform .2s var(--ease);
   }
-  .go-btn .d{ font-size:13px; font-weight:400; color:var(--ink-3); white-space:nowrap; }
-  .go-btn.ext .k::after{ content:" ↗"; color:var(--ink-3); font-weight:400; }
+  .link:hover::after{ transform:translateX(3px); }
 
-  /* ===== 篇 ===== */
-  .part{ margin-top:76px; padding-top:28px; border-top:2px solid var(--ink); }
-  .part h2{ margin:0; font-size:24px; font-weight:700; }
-  .part p{ margin:10px 0 0; font-size:15px; color:var(--ink-2); }
-  .card{
-    background:var(--card); border-radius:16px; padding:26px 28px; margin-top:24px;
-    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 30px -22px rgba(16,24,40,.14);
+  /* 首屏的贴纸实体：就是本页的「产品图」，由 canvas 现画，不引任何位图 */
+  .hero-shot{
+    display:block; width:min(500px, 86vw); height:auto; margin:0 auto 52px;
+    border-radius:30px;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.28), 0 8px 20px -12px rgba(0,0,0,.12);
   }
-  .note{ margin:14px 0 0; font-size:13.5px; color:var(--ink-3); }
 
-  /* 问卷式解读（评级区，中性无彩色） */
-  .q-q{ font-size:15.5px; font-weight:700; }
-  .q-opts{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
-  .q-opts button{
+  /* ===== 标注拆解 ===== */
+  .anatomy{ margin:56px auto 0; text-align:center; }
+  .an-code{
+    display:flex; align-items:flex-start; justify-content:center; gap:clamp(14px, 3vw, 30px);
+    font-size:clamp(44px, 9vw, 82px); font-weight:600; line-height:1;
+    letter-spacing:-.03em;
+  }
+  .an-part{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .an-part b{ font-weight:inherit; }   /* b 默认 700，会压过整块定下的 600 */
+  .an-part i{
+    font-style:normal; font-size:13px; font-weight:500; letter-spacing:0;
+    color:var(--ink-3); line-height:1.3;
+  }
+  .an-pre{ color:var(--ink-3); font-weight:600; }
+  .an-d2{ color:var(--c2); }
+  .an-d4{ color:var(--c4); }
+  .an-star{ color:var(--ink); }
+  .an-note{
+    margin:22px auto 0; max-width:30em; font-size:14px; line-height:1.6;
+    color:var(--ink-3); letter-spacing:0;
+  }
+
+  /* ===== 问卷式解读 ===== */
+  .quiz{ max-width:720px; margin:72px auto 0; }
+  .q{ padding:44px 0; border-top:1px solid var(--hair); }
+  .q:first-child{ border-top:0; padding-top:0; }
+  .q h3{ font-size:clamp(21px, 2.6vw, 27px); line-height:1.25; }
+  .q-hint{ margin:10px 0 0; font-size:15px; color:var(--ink-3); letter-spacing:0; }
+
+  /* segmented control：苹果的经典控件，浅灰轨道里浮起一枚白色胶囊 */
+  .seg{
+    display:inline-flex; gap:2px; padding:2px; margin-top:22px;
+    background:#e8e8ed; border-radius:11px;
+  }
+  .seg button{
     font-family:inherit; cursor:pointer;
-    border:1px solid #dfe3e9; background:#f4f6fa; color:var(--ink-2);
-    border-radius:10px; padding:10px 24px; font-size:15px; font-weight:600;
-    transition:background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+    border:0; background:transparent; color:var(--ink-2);
+    border-radius:9px; padding:8px 22px; font-size:14.5px; font-weight:500; letter-spacing:0;
+    transition:background-color var(--dur) var(--ease), color var(--dur) var(--ease),
+               box-shadow var(--dur) var(--ease);
   }
-  .q-opts button:hover{ background:#e9edf4; }
-  .q-opts button.on{ background:var(--ink); border-color:var(--ink); color:#fff; }
-  .q-opts button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  .seg button:hover{ color:var(--ink); }
+  .seg button.on{
+    background:#fff; color:var(--ink); font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.08);
+  }
+  .seg button:focus-visible{ outline:2px solid var(--ui-blue); outline-offset:2px; }
+
   .q-ans{
     display:grid; grid-template-rows:0fr; opacity:0;
-    transition:grid-template-rows .32s var(--ease), opacity .26s var(--ease);
+    transition:grid-template-rows .38s var(--ease), opacity .3s var(--ease);
   }
   .q-ans.open{ grid-template-rows:1fr; opacity:1; }
   .q-inner{ overflow:hidden; }
-  .q-inner > p{ margin:16px 0 4px; font-size:14.5px; color:var(--ink-2); }
-  .q-sub{ margin-top:20px; font-size:13.5px; font-weight:700; color:var(--ink-3); }
-  .q-row{ display:flex; gap:12px; padding:10px 0; border-top:1px solid var(--line-2); }
-  .lv-n{
-    flex:none; width:26px; height:26px; margin-top:2px;
-    display:flex; align-items:center; justify-content:center;
-    background:#eef1f5; border-radius:7px;
-    font-family:var(--mono); font-size:14px; font-weight:700; color:var(--ink);
+  .q-inner > p{
+    margin:24px 0 6px; font-size:16.5px; line-height:1.6; color:var(--ink-2); letter-spacing:0;
   }
-  .q-row p{ margin:0; font-size:13.5px; color:var(--ink-2); line-height:1.72; }
-  .q-row p b{ color:var(--ink); font-weight:600; }
+  .q-inner > p b{ color:var(--ink); font-weight:600; }
+  .q-sub{
+    margin:32px 0 4px; font-size:13px; font-weight:600; letter-spacing:.02em; color:var(--ink-3);
+  }
+  .q-row{ display:flex; gap:16px; padding:14px 0; border-top:1px solid var(--hair); }
+  .q-row:first-of-type, .q-sub + .q-row{ border-top:0; }
+  .lv-n{
+    flex:none; width:22px; margin-top:1px;
+    font-family:var(--mono); font-size:19px; font-weight:600; line-height:1.5;
+    text-align:left;
+  }
+  .lv-n.lv0{ color:var(--c0); } .lv-n.lv1{ color:var(--c1); } .lv-n.lv2{ color:var(--c2); }
+  .lv-n.lv3{ color:var(--c3); } .lv-n.lv4{ color:var(--c4); } .lv-n.lv5{ color:var(--c5); }
+  .q-row p{ margin:0; font-size:16.5px; line-height:1.6; color:var(--ink); letter-spacing:0; }
+  .q-row p b{ font-weight:600; }
 
   /* ===== 嵌入的贴纸生成器（类名全部 sg- 前缀，与页面样式隔离） ===== */
-  .sg-wrap{ display:flex; flex-direction:column; align-items:center; gap:24px; margin-top:28px; }
+  .sg-wrap{
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:30px; margin-top:56px;
+  }
+  /* 产品背后那层极淡的光晕：苹果用来把主体从黑底上托起来，不抢戏 */
+  .sg-wrap::before{
+    content:""; position:absolute; inset:-8% -20% 10%;
+    background:radial-gradient(52% 44% at 50% 32%, rgba(65,176,246,.20), rgba(65,176,246,0) 72%);
+    pointer-events:none;
+  }
   .sg-sticker{
     position:relative; width:500px;
+    font-family:var(--font-sticker);        /* 必须：导出 PNG 用的就是这一族 */
     --foot:0px;                          /* 说明项条带高度，0 = 5:4；由 .has-url 打开 */
     height:calc(var(--base-h) + var(--foot));
     --sg-frame:var(--blue);
@@ -119,7 +211,6 @@
     background:var(--sg-frame);
     border-radius:30px;
     overflow:hidden;
-    box-shadow:0 10px 30px rgba(0,0,0,.12);
     transition:height .32s var(--ease),
                background-color .32s var(--ease);
     flex:none;
@@ -228,53 +319,52 @@
   .sg-lab.sg-lleft{ left:20px; }
   .sg-lab.sg-lright{ right:20px; }
 
+  /* 控制面板：不再是一张白卡片，直接躺在黑底上，控件各自成为一条胶囊轨道 */
   .sg-panel{
     width:500px; max-width:100%;
-    display:flex; flex-direction:column; gap:14px;
-    background:#fff; border-radius:14px; padding:16px 20px 14px;
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
-    font-size:14px; color:#333;
-    --cell:36px; --cell-gap:6px; --rate-on:156px;
+    display:flex; flex-direction:column; gap:20px;
+    font-size:14px; color:#f5f5f7;
+    --cell:40px; --cell-gap:6px; --rate-on:156px;
   }
-  .sg-block{ display:flex; flex-direction:column; gap:8px; }
-  .sg-bhead{ display:flex; align-items:center; gap:8px; }
+  .sg-block{ display:flex; flex-direction:column; gap:10px; }
+  .sg-bhead{ display:flex; align-items:baseline; gap:10px; }
   .sg-step{
-    flex:none; width:18px; height:18px; border-radius:50%;
-    background:#eef1f6; color:#6b7480;
-    font-size:11px; font-weight:700;
-    display:flex; align-items:center; justify-content:center;
+    flex:none;
+    font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.08em;
+    color:#86868b;
   }
-  .sg-bname{ flex:none; font-size:14px; font-weight:700; }
-  .sg-seg, .sg-btns{ display:flex; gap:var(--cell-gap); width:100%; }
-  .sg-seg label{ position:relative; display:block; flex:1; }
+  .sg-step::before{ content:"0"; }
+  .sg-bname{ flex:none; font-size:13px; font-weight:600; letter-spacing:.01em; color:#f5f5f7; }
+  .sg-seg, .sg-btns{
+    display:flex; gap:var(--cell-gap); width:100%;
+    background:rgba(255,255,255,.08); border-radius:980px; padding:5px;
+  }
+  .sg-seg label{ position:relative; display:block; flex:1; min-width:0; }
   .sg-seg input{ position:absolute; width:0; height:0; opacity:0; }
   .sg-seg span, .sg-btns button{
     display:flex; align-items:center; justify-content:center;
     width:100%; height:var(--cell);
-    border:1px solid #e2e6ee; border-radius:9px;
-    background:#f4f6fa; color:#5a6270;
-    font-family:inherit; font-size:15px; font-weight:500;
+    border:1px solid transparent; border-radius:980px;
+    background:transparent; color:rgba(255,255,255,.62);
+    font-family:inherit; font-size:14px; font-weight:500; letter-spacing:0;
     white-space:nowrap; cursor:pointer;
-    transition:background .15s, color .15s, border-color .15s, transform .1s;
+    transition:background .2s var(--ease), color .2s var(--ease), transform .1s;
   }
-  .sg-seg span:hover, .sg-btns button:hover{ background:#e9edf4; }
-  .sg-seg span:active, .sg-btns button:active{ transform:scale(.96); }
-  .sg-seg label.t0 input:checked + span{ background:var(--c0); border-color:var(--c0); color:#2f3136; }
-  .sg-seg label.t0 input:checked + span:hover{ background:#f9a668; }
-  .sg-seg label.t5 input:checked + span{ background:var(--c5); border-color:var(--c5); color:#fff; }
-  .sg-seg label.t5 input:checked + span:hover{ background:#3f5df0; }
-  /* 说明项这一行不借档位色（会被读成某个等级的快捷方式），用与下载按钮同源的石板灰 */
-  .sg-seg label.n input:checked + span{ background:#2b3138; border-color:#2b3138; color:#fff; }
-  .sg-seg label.n input:checked + span:hover{ background:#1d2127; }
+  .sg-seg span:hover, .sg-btns button:hover{ color:#fff; }
+  .sg-seg span:active, .sg-btns button:active{ transform:scale(.97); }
+  /* 选中一律「白胶囊 + 深色字」；档位那一行例外，用档位色——那是有语义的颜色 */
+  .sg-seg input:checked + span{
+    background:#f5f5f7; border-color:#f5f5f7; color:#1d1d1f; font-weight:600;
+  }
   .sg-seg input:focus-visible + span,
-  .sg-btns button:focus-visible{ outline:2px solid #4d6bfe; outline-offset:1px; }
+  .sg-btns button:focus-visible{ outline:2px solid #f5f5f7; outline-offset:2px; }
   .sg-btns .sg-pick{
     position:relative; flex:none;
     width:calc((100% - var(--rate-on) - var(--cell-gap) * 5) / 5);
     transition:width .22s var(--ease);
   }
   .sg-btns .sg-pick.on{ width:var(--rate-on); }
-  .sg-btns .sg-pick > button{ padding:0; overflow:hidden; }
+  .sg-btns .sg-pick > button{ padding:0 10px; overflow:hidden; }
   .sg-btns .k, .sg-btns .t{
     max-width:0; opacity:0; overflow:hidden;
     transition:max-width .22s var(--ease), opacity .1s;
@@ -284,207 +374,293 @@
     opacity:1;
     transition:max-width .22s var(--ease), opacity .14s .12s;
   }
-  .sg-btns .sg-pick.on .k{ max-width:60px; }
+  .sg-btns .sg-pick.on .k{ max-width:52px; }
   .sg-btns .sg-pick.on .t{ max-width:220px; }
+  .sg-btns .k{ margin-right:5px; }
+  .sg-btns .n{ font-weight:600; }
   .sg-btns .sg-tip{
-    position:absolute; bottom:calc(100% + 8px); left:50%; translate:-50% 4px;
-    padding:5px 9px; border-radius:7px;
-    background:#fff; color:#333; border:1px solid #e4e8f0;
-    box-shadow:0 6px 18px rgba(25,35,55,.13);
-    font-size:12.5px; font-weight:400;
+    position:absolute; bottom:calc(100% + 10px); left:50%; translate:-50% 4px;
+    padding:6px 11px; border-radius:9px;
+    background:#f5f5f7; color:#1d1d1f; border:0;
+    box-shadow:0 8px 22px rgba(0,0,0,.35);
+    font-size:12.5px; font-weight:500; letter-spacing:0;
     white-space:nowrap; z-index:6;
     opacity:0; pointer-events:none;
-    transition:opacity .14s, translate .14s;
+    transition:opacity .16s, translate .16s;
   }
   .sg-btns .sg-tip::after{
     content:""; position:absolute; top:100%; left:50%; margin-left:-4px;
-    width:8px; height:8px; background:#fff;
-    border-right:1px solid #e4e8f0; border-bottom:1px solid #e4e8f0;
-    transform:translateY(-4.5px) rotate(45deg);
+    width:8px; height:8px; background:#f5f5f7;
+    transform:translateY(-4px) rotate(45deg);
   }
   .sg-btns .sg-pick:not(.on):hover .sg-tip{ opacity:1; translate:-50% 0; }
   .sg-btns .sg-pick:first-child .sg-tip{ left:0; translate:0 4px; }
-  .sg-btns .sg-pick:first-child .sg-tip::after{ left:18px; }
+  .sg-btns .sg-pick:first-child .sg-tip::after{ left:20px; }
   .sg-btns .sg-pick:first-child:hover .sg-tip{ translate:0 0; }
   .sg-btns .sg-pick:last-child .sg-tip{ left:auto; right:0; translate:0 4px; }
-  .sg-btns .sg-pick:last-child .sg-tip::after{ left:auto; right:18px; }
+  .sg-btns .sg-pick:last-child .sg-tip::after{ left:auto; right:20px; }
   .sg-btns .sg-pick:last-child:hover .sg-tip{ translate:0 0; }
   .sg-foot{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    border-top:1px solid #eceef2; padding-top:12px;
-    font-size:13px; color:#8a919c;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border-top:1px solid rgba(255,255,255,.14); padding-top:18px;
+    font-size:13px; color:#86868b;
   }
   .sg-foot button{
-    font-family:inherit; cursor:pointer;
-    transition:background .15s, color .15s, border-color .15s, transform .1s;
+    font-family:inherit; cursor:pointer; border-radius:980px;
+    transition:background .18s var(--ease), color .18s var(--ease),
+               border-color .18s var(--ease), transform .1s;
   }
   .sg-foot button:active{ transform:scale(.98); }
-  .sg-foot button:focus-visible{ outline:2px solid #4d6bfe; outline-offset:2px; }
+  .sg-foot button:focus-visible{ outline:2px solid #f5f5f7; outline-offset:2px; }
   .sg-mode{
-    border:1px solid #e2e6ee; border-radius:9px; background:#f4f6fa;
-    padding:7px 12px; font-size:12.5px; font-weight:500; color:#5a6270;
+    border:1px solid rgba(255,255,255,.26); background:transparent;
+    padding:9px 16px; font-size:13px; font-weight:500; letter-spacing:0; color:#f5f5f7;
   }
-  .sg-mode:hover{ background:#e9edf4; }
-  .sg-mode[aria-pressed="true"]{ background:#16191f; border-color:#16191f; color:#f2f4f8; }
-  .sg-mode[aria-pressed="true"]:hover{ background:#0d0f13; }
+  .sg-mode:hover{ border-color:rgba(255,255,255,.5); }
+  .sg-mode[aria-pressed="true"]{ background:#f5f5f7; border-color:#f5f5f7; color:#1d1d1f; font-weight:600; }
   .sg-dl{
-    border:1px solid #2b3138; border-radius:9px; background:#2b3138;
-    padding:8px 14px; font-size:13.5px; font-weight:700; color:#fff;
+    border:0; background:#f5f5f7;
+    padding:12px 24px; font-size:15px; font-weight:600; letter-spacing:0; color:#1d1d1f;
   }
-  .sg-dl:hover{ background:#1d2127; border-color:#1d2127; }
-  .sg-dl:disabled{ opacity:.65; cursor:progress; }
+  .sg-dl:hover{ background:#fff; }
+  .sg-dl:disabled{ opacity:.6; cursor:progress; }
+  .sg-hint{
+    margin:0; font-size:13px; line-height:1.6; color:#86868b; letter-spacing:0; text-align:center;
+  }
 
-  footer{ margin-top:76px; padding-top:24px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-3); }
+  /* ===== 页脚 ===== */
+  footer{
+    background:var(--grey); padding:44px 0 60px;
+    font-size:12px; line-height:1.7; color:var(--ink-3); letter-spacing:0;
+  }
+  .foot-in{ max-width:980px; margin:0 auto; padding:0 22px; }
+  .foot-top{ display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid var(--hair); }
+  .foot-top a{ color:var(--ink-2); }
+  .foot-links{ display:flex; gap:22px; flex-wrap:wrap; }
+  .foot-meta{ padding-top:18px; }
+
+  /* ===== 滚动淡入：只做「上移 + 出现」，幅度小、时长长，不炫技 ===== */
+  [data-reveal]{ opacity:0; transform:translateY(26px); }
+  [data-reveal].in-view{
+    opacity:1; transform:none;
+    transition:opacity .8s var(--reveal), transform .8s var(--reveal);
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    [data-reveal]{ opacity:1; transform:none; }
+    *{ transition-duration:.01ms !important; }
+  }
 
   @media (max-width:760px){
-    .hero{ padding:36px 0 0; }
-    .hero h1{ font-size:29px; }
-    .go-btn{ padding:14px 16px; font-size:15px; }
-    .q-row{ gap:10px; }
-    .sg-panel{ --cell:32px; --cell-gap:5px; --rate-on:146px; }
-    .sg-seg span, .sg-btns button{ font-size:14px; }
+    .sec{ padding:76px 0; }
+    .hero{ padding:60px 0 0; }
+    .hero h1{ letter-spacing:-.02em; }
+    .cta{ gap:18px; }
+    .hero-shot{ margin:0 auto 40px; }
+    .an-code{ gap:12px; }
+    .quiz{ margin-top:52px; }
+    .q{ padding:34px 0; }
+    .q-row{ gap:12px; }
+    .seg{ display:flex; width:100%; }
+    .seg button{ flex:1; padding:9px 8px; }
+    .sg-panel{ --cell:36px; --cell-gap:5px; --rate-on:132px; }
+    .sg-btns .sg-pick.on .k{ max-width:0; }
+    .sg-btns .sg-pick.on .t{ max-width:150px; }
+    .nav nav{ gap:18px; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="topbar">
-    <div class="brand">IIIA<span>作品 AI 参与度</span></div>
-    <nav><a href="https://github.com/ErSanSan233/IIIA">GitHub</a></nav>
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top">IIIA</a>
+    <nav>
+      <a href="#meaning">读懂标注</a>
+      <a href="#make">制作贴纸</a>
+      <a href="https://github.com/ErSanSan233/IIIA">GitHub</a>
+    </nav>
   </div>
+</header>
 
-  <div class="hero">
-    <h1><code>IIIA</code> 衡量一件作品中 AI 参与的程度。</h1>
-    <div class="gos">
-      <a class="go-btn" href="#meaning"><span class="k">它是什么意思</span><span class="d">回答两个问题，读懂任何标注</span></a>
-      <a class="go-btn" href="#make"><span class="k">我要制作贴纸</span><span class="d">选档位，实时出图</span></a>
-      <a class="go-btn ext" href="https://github.com/ErSanSan233/IIIA"><span class="k">完整规范</span><span class="d">GitHub 仓库</span></a>
+<main>
+
+  <!-- 首屏 -->
+  <section class="hero" id="top">
+    <div class="in">
+      <canvas class="hero-shot" id="heroShot" width="1000" height="800" role="img"
+              aria-label="IIIA24* 贴纸示例" data-reveal></canvas>
+      <p class="eyebrow" data-reveal>AI 参与指数</p>
+      <h1 data-reveal>一件作品里，<br>AI 参与了多少。</h1>
+      <p class="lede" data-reveal>IIIA 用一到两位数字，分别记下作品的想法与制作有多少交给了 AI。标在作品开头，读者一眼就能判断。</p>
+      <div class="cta" data-reveal>
+        <a class="link" href="#meaning">读懂一个标注</a>
+        <a class="link" href="#make">制作贴纸</a>
+      </div>
     </div>
-  </div>
+  </section>
 
   <!-- 它是什么意思 -->
-  <div class="part" id="meaning">
-    <h2>它是什么意思</h2>
-    <p>一个 IIIA 标注由数字和可能的星号组成。数字衡量两件事：作品的<b>想法</b>（想表达什么、怎么组织）和作品的<b>制作</b>（具体怎么被做出来），各分 0 到 5 档，数字越大，AI 参与越深。回答下面两个问题，就能读懂你看到的任何标注。</p>
-
-    <div class="card">
-      <div class="q-q">你看到的数字是几位？</div>
-      <div class="q-opts">
-        <button type="button" data-q="digits" data-a="one">一位数字</button>
-        <button type="button" data-q="digits" data-a="two">两位数字</button>
+  <section class="sec sec-grey" id="meaning">
+    <div class="in">
+      <div class="sec-head" data-reveal>
+        <p class="eyebrow">读懂标注</p>
+        <h2>数字讲两件事，<br>星号讲一件事。</h2>
+        <p class="sec-lede">想法与制作各分 0 到 5 档，数字越大，AI 参与越深。回答下面两个问题，就能读懂你看到的任何标注。</p>
       </div>
 
-      <div class="q-ans" data-group="digits" data-ans="one">
-        <div class="q-inner">
-          <p>想法和制作的 AI 参与程度差不多（相差不超过 1 档），合并成一个数字，读整体参与程度：</p>
-          <div class="q-row"><span class="lv-n">0</span><p><b>全程人工</b>——想法与制作都不用 AI。</p></div>
-          <div class="q-row"><span class="lv-n">1</span><p><b>AI 只当参考</b>——出主意、找灵感，不直接产出内容。</p></div>
-          <div class="q-row"><span class="lv-n">2</span><p><b>AI 打下手</b>——做语法检查、简单润色这类基础辅助。</p></div>
-          <div class="q-row"><span class="lv-n">3</span><p><b>AI 干重活，人把关</b>——AI 完成大量内容，人工深度修改、审核并定稿。</p></div>
-          <div class="q-row"><span class="lv-n">4</span><p><b>AI 主导，人打下手</b>——AI 跑通全流程，人工只做有限润色或局部调整。</p></div>
-          <div class="q-row"><span class="lv-n">5</span><p><b>全程 AI</b>——AI 独立完成，人最多上传、发布。</p></div>
+      <div class="anatomy" data-reveal>
+        <div class="an-code">
+          <span class="an-pre">IIIA</span>
+          <span class="an-part an-d2"><b>2</b><i>第一位<br>想法</i></span>
+          <span class="an-part an-d4"><b>4</b><i>第二位<br>制作</i></span>
+          <span class="an-part an-star"><b>*</b><i>星号<br>AI 主题</i></span>
         </div>
+        <p class="an-note">以 <code>IIIA24*</code> 为例：想法由人主导、AI 辅助（2），制作大部分交给 AI（4），作品本身在讲 AI（*）。</p>
       </div>
 
-      <div class="q-ans" data-group="digits" data-ans="two">
-        <div class="q-inner">
-          <p>想法和制作差得远（相差 2 档及以上），两个数字都写出来：<b>第一位是想法，第二位是制作</b>。</p>
-          <div class="q-sub">第一位数字 · 想法是谁出的（主旨思路 Z）</div>
-          <div class="q-row"><span class="lv-n">0</span><p>想法全由人构思，AI 未参与。</p></div>
-          <div class="q-row"><span class="lv-n">1</span><p>人想，AI 只启发灵感、提供参考（如头脑风暴、热点分析）。</p></div>
-          <div class="q-row"><span class="lv-n">2</span><p>人为主，AI 做基础辅助（如语法检查、润色提示）。</p></div>
-          <div class="q-row"><span class="lv-n">3</span><p>AI 出大量内容（如分镜、论据、初稿），人深度修改、审核并定稿。</p></div>
-          <div class="q-row"><span class="lv-n">4</span><p>AI 主导立意与叙事，人只做有限润色或局部调整。</p></div>
-          <div class="q-row"><span class="lv-n">5</span><p>AI 独立产出全部想法，无人干预。</p></div>
-          <div class="q-sub">第二位数字 · 活是谁干的（实现过程 S）</div>
-          <div class="q-row"><span class="lv-n">0</span><p>素材、剪辑、后期全部人工。</p></div>
-          <div class="q-row"><span class="lv-n">1</span><p>人做，AI 只推荐素材（如图片、音乐片段）。</p></div>
-          <div class="q-row"><span class="lv-n">2</span><p>人为主，AI 生成少量素材（如背景图、虚拟场景）。</p></div>
-          <div class="q-row"><span class="lv-n">3</span><p>AI 出关键素材（如配图、配乐、片段），人严格筛选、整合。</p></div>
-          <div class="q-row"><span class="lv-n">4</span><p>AI 生成大部分或全部素材，人只抽查。</p></div>
-          <div class="q-row"><span class="lv-n">5</span><p>AI 全流程生成与合成，人只上传、发布。</p></div>
+      <div class="quiz">
+        <div class="q" data-reveal>
+          <h3>你看到的数字是几位？</h3>
+          <p class="q-hint">想法与制作的 AI 参与程度接近时合并成一位，相差较大时两位都写出来。</p>
+          <div class="seg q-opts">
+            <button type="button" data-q="digits" data-a="one" class="on">一位数字</button>
+            <button type="button" data-q="digits" data-a="two">两位数字</button>
+          </div>
+
+          <div class="q-ans open" data-group="digits" data-ans="one">
+            <div class="q-inner">
+              <p>想法和制作的 AI 参与程度差不多（相差不超过 1 档），合并成一个数字，读整体参与程度：</p>
+              <div class="q-row"><span class="lv-n lv0">0</span><p><b>全程人工</b>——想法与制作都不用 AI。</p></div>
+              <div class="q-row"><span class="lv-n lv1">1</span><p><b>AI 只当参考</b>——出主意、找灵感，不直接产出内容。</p></div>
+              <div class="q-row"><span class="lv-n lv2">2</span><p><b>AI 打下手</b>——做语法检查、简单润色这类基础辅助。</p></div>
+              <div class="q-row"><span class="lv-n lv3">3</span><p><b>AI 干重活，人把关</b>——AI 完成大量内容，人工深度修改、审核并定稿。</p></div>
+              <div class="q-row"><span class="lv-n lv4">4</span><p><b>AI 主导，人打下手</b>——AI 跑通全流程，人工只做有限润色或局部调整。</p></div>
+              <div class="q-row"><span class="lv-n lv5">5</span><p><b>全程 AI</b>——AI 独立完成，人最多上传、发布。</p></div>
+            </div>
+          </div>
+
+          <div class="q-ans" data-group="digits" data-ans="two">
+            <div class="q-inner">
+              <p>想法和制作差得远（相差 2 档及以上），两个数字都写出来：<b>第一位是想法，第二位是制作</b>。</p>
+              <div class="q-sub">第一位数字 · 想法是谁出的（主旨思路 Z）</div>
+              <div class="q-row"><span class="lv-n lv0">0</span><p>想法全由人构思，AI 未参与。</p></div>
+              <div class="q-row"><span class="lv-n lv1">1</span><p>人想，AI 只启发灵感、提供参考（如头脑风暴、热点分析）。</p></div>
+              <div class="q-row"><span class="lv-n lv2">2</span><p>人为主，AI 做基础辅助（如语法检查、润色提示）。</p></div>
+              <div class="q-row"><span class="lv-n lv3">3</span><p>AI 出大量内容（如分镜、论据、初稿），人深度修改、审核并定稿。</p></div>
+              <div class="q-row"><span class="lv-n lv4">4</span><p>AI 主导立意与叙事，人只做有限润色或局部调整。</p></div>
+              <div class="q-row"><span class="lv-n lv5">5</span><p>AI 独立产出全部想法，无人干预。</p></div>
+              <div class="q-sub">第二位数字 · 活是谁干的（实现过程 S）</div>
+              <div class="q-row"><span class="lv-n lv0">0</span><p>素材、剪辑、后期全部人工。</p></div>
+              <div class="q-row"><span class="lv-n lv1">1</span><p>人做，AI 只推荐素材（如图片、音乐片段）。</p></div>
+              <div class="q-row"><span class="lv-n lv2">2</span><p>人为主，AI 生成少量素材（如背景图、虚拟场景）。</p></div>
+              <div class="q-row"><span class="lv-n lv3">3</span><p>AI 出关键素材（如配图、配乐、片段），人严格筛选、整合。</p></div>
+              <div class="q-row"><span class="lv-n lv4">4</span><p>AI 生成大部分或全部素材，人只抽查。</p></div>
+              <div class="q-row"><span class="lv-n lv5">5</span><p>AI 全流程生成与合成，人只上传、发布。</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-reveal>
+          <h3>末尾有没有星号？</h3>
+          <p class="q-hint">星号只说明作品的主题，与数字大小、制作方式都无关。</p>
+          <div class="seg q-opts">
+            <button type="button" data-q="star" data-a="yes">有星号</button>
+            <button type="button" data-q="star" data-a="no">没有星号</button>
+          </div>
+
+          <div class="q-ans" data-group="star" data-ans="yes">
+            <div class="q-inner">
+              <p><b>作品本身在讲 AI</b>——比如一篇 AI 伦理文章、一部 AI 题材短片。星号只说明主题，跟数字大小、制作方式都无关。</p>
+            </div>
+          </div>
+
+          <div class="q-ans" data-group="star" data-ans="no">
+            <div class="q-inner">
+              <p><b>作品不以 AI 为主题</b>，不加任何符号。</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="q-q">末尾有没有星号？</div>
-      <div class="q-opts">
-        <button type="button" data-q="star" data-a="yes">有星号</button>
-        <button type="button" data-q="star" data-a="no">没有星号</button>
-      </div>
-
-      <div class="q-ans" data-group="star" data-ans="yes">
-        <div class="q-inner">
-          <p><b>作品本身在讲 AI</b>——比如一篇 AI 伦理文章、一部 AI 题材短片。星号只说明主题，跟数字大小、制作方式都无关。</p>
-        </div>
-      </div>
-
-      <div class="q-ans" data-group="star" data-ans="no">
-        <div class="q-inner">
-          <p><b>作品不以 AI 为主题</b>，不加任何符号。</p>
-        </div>
-      </div>
-    </div>
-  </div>
+  </section>
 
   <!-- 我要制作贴纸 -->
-  <div class="part" id="make">
-    <h2>我要制作贴纸</h2>
-    <div class="sg-wrap">
-      <div class="sg-sticker" id="sgSticker">
-        <div class="sg-header">人工智能参与指数</div>
-        <div class="sg-card" id="sgCard">
-          <div class="sg-chart">
-            <div class="sg-row sg-top" id="sgRowTop"></div>
-            <div class="sg-row sg-bot" id="sgRowBot"></div>
-            <svg class="sg-star" id="sgStar" viewBox="52.5 175 28 27" xmlns="http://www.w3.org/2000/svg">
-              <path id="sgStarPath" fill="#4d6bfe" d="M 69.329 185.007 L 69.329 175.878 L 63.487 175.878 L 63.487 185.007 L 55.235 181.793 L 53.263 187.417 L 61.734 190.265 L 56.330 197.422 L 61.223 201 L 66.335 193.478 L 71.739 201 L 76.559 197.422 L 71.155 190.265 L 79.773 187.417 L 77.801 181.793 Z"/>
-            </svg>
-          </div>
-          <div class="sg-lab sg-lleft">人工制作</div>
-          <div class="sg-lab sg-lright">自动生成</div>
-        </div>
-        <div class="sg-urlband" id="sgUrlBand"><span id="sgUrlText">ersansan233.github.io/IIIA</span></div>
+  <section class="sec sec-dark" id="make">
+    <div class="in">
+      <div class="sec-head" data-reveal>
+        <p class="eyebrow">制作贴纸</p>
+        <h2>选好档位，<br>贴纸立刻生成。</h2>
+        <p class="sec-lede">四步定好标注，右侧实时出图，满意了直接下载 PNG。</p>
       </div>
 
-      <div class="sg-panel">
-        <div class="sg-block">
-          <div class="sg-bhead"><span class="sg-step">1</span><span class="sg-bname">作品主题</span></div>
-          <div class="sg-seg" id="sgThemeSeg">
-            <label class="t0"><input type="radio" name="sgtheme" value="0" checked><span>非 AI 主题</span></label>
-            <label class="t5"><input type="radio" name="sgtheme" value="1"><span>AI 主题</span></label>
+      <div class="sg-wrap" data-reveal>
+        <div class="sg-sticker" id="sgSticker">
+          <div class="sg-header">人工智能参与指数</div>
+          <div class="sg-card" id="sgCard">
+            <div class="sg-chart">
+              <div class="sg-row sg-top" id="sgRowTop"></div>
+              <div class="sg-row sg-bot" id="sgRowBot"></div>
+              <svg class="sg-star" id="sgStar" viewBox="52.5 175 28 27" xmlns="http://www.w3.org/2000/svg">
+                <path id="sgStarPath" fill="#4d6bfe" d="M 69.329 185.007 L 69.329 175.878 L 63.487 175.878 L 63.487 185.007 L 55.235 181.793 L 53.263 187.417 L 61.734 190.265 L 56.330 197.422 L 61.223 201 L 66.335 193.478 L 71.739 201 L 76.559 197.422 L 71.155 190.265 L 79.773 187.417 L 77.801 181.793 Z"/>
+              </svg>
+            </div>
+            <div class="sg-lab sg-lleft">人工制作</div>
+            <div class="sg-lab sg-lright">自动生成</div>
           </div>
+          <div class="sg-urlband" id="sgUrlBand"><span id="sgUrlText">ersansan233.github.io/IIIA</span></div>
         </div>
-        <div class="sg-block">
-          <div class="sg-bhead"><span class="sg-step">2</span><span class="sg-bname">主旨思路</span></div>
-          <div class="sg-btns" id="sgZBtns"></div>
-        </div>
-        <div class="sg-block">
-          <div class="sg-bhead"><span class="sg-step">3</span><span class="sg-bname">实现过程</span></div>
-          <div class="sg-btns" id="sgSBtns"></div>
-        </div>
-        <div class="sg-block">
-          <div class="sg-bhead"><span class="sg-step">4</span><span class="sg-bname">说明项</span></div>
-          <div class="sg-seg" id="sgUrlSeg">
-            <label class="n"><input type="radio" name="sgurl" value="0" checked><span>无</span></label>
-            <label class="n"><input type="radio" name="sgurl" value="1"><span>添加网址</span></label>
+
+        <div class="sg-panel">
+          <div class="sg-block">
+            <div class="sg-bhead"><span class="sg-step">1</span><span class="sg-bname">作品主题</span></div>
+            <div class="sg-seg" id="sgThemeSeg">
+              <label><input type="radio" name="sgtheme" value="0" checked><span>非 AI 主题</span></label>
+              <label><input type="radio" name="sgtheme" value="1"><span>AI 主题</span></label>
+            </div>
           </div>
-        </div>
-        <div class="sg-foot">
-          <button class="sg-mode" id="sgDarkToggle" aria-pressed="false">深色模式关</button>
-          <button class="sg-dl" id="sgDownloadBtn">下载贴纸</button>
+          <div class="sg-block">
+            <div class="sg-bhead"><span class="sg-step">2</span><span class="sg-bname">主旨思路</span></div>
+            <div class="sg-btns" id="sgZBtns"></div>
+          </div>
+          <div class="sg-block">
+            <div class="sg-bhead"><span class="sg-step">3</span><span class="sg-bname">实现过程</span></div>
+            <div class="sg-btns" id="sgSBtns"></div>
+          </div>
+          <div class="sg-block">
+            <div class="sg-bhead"><span class="sg-step">4</span><span class="sg-bname">说明项</span></div>
+            <div class="sg-seg" id="sgUrlSeg">
+              <label><input type="radio" name="sgurl" value="0" checked><span>无</span></label>
+              <label><input type="radio" name="sgurl" value="1"><span>添加网址</span></label>
+            </div>
+          </div>
+          <div class="sg-foot">
+            <button class="sg-mode" id="sgDarkToggle" aria-pressed="false">深色模式关</button>
+            <button class="sg-dl" id="sgDownloadBtn">下载贴纸</button>
+          </div>
+          <p class="sg-hint">下载的是 1000px 宽的 PNG。标在作品开头，观众打开即可看到。</p>
         </div>
       </div>
     </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-in">
+    <div class="foot-top">
+      <div>IIIA · AI 参与指数</div>
+      <div class="foot-links">
+        <a href="https://github.com/ErSanSan233/IIIA">GitHub</a>
+        <a href="https://github.com/ErSanSan233/IIIA/blob/main/CHANGELOG.md">更新日志</a>
+        <a href="https://github.com/ErSanSan233/IIIA/blob/main/README.md">完整规范</a>
+      </div>
+    </div>
+    <div class="foot-meta">
+      IIIA 是一份建议性质的尝试，没有认证机构；是否采用、如何采用，由创作者自愿决定。本仓库自标 IIIA 3*。MIT 许可。
+    </div>
   </div>
-
-  <footer>
-    <a href="https://github.com/ErSanSan233/IIIA">github.com/ErSanSan233/IIIA</a>
-  </footer>
-
-</div>
+</footer>
 
 <script>
 /* ================= 贴纸模块（类名全部 sg- 前缀，与页面样式隔离） ================= */
@@ -492,6 +668,9 @@ var COLORS = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
 var SG_LABEL_Z = ["无AI参与","AI提供参考","AI辅助创作","人类全审查","人类有限干预","全AI"];
 var SG_LABEL_S = ["全手搓","AI辅助灵感","个别AI素材","人类全审查","人类有限干预","全AI"];
 var GAP = 11.24, X0 = 25, W1 = 62.4;
+
+/* 面板躺在黑底上，未选中的格子必须透明——否则会在深色区块里浮出灰方块 */
+var IDLE_BG = "transparent", IDLE_FG = "rgba(255,255,255,.62)", IDLE_BD = "transparent";
 
 var SG = { Z:5, S:5, ai:false, url:false, code:"5" };  // url = 说明项：卡下加网址条，贴纸变 500×450
 
@@ -630,9 +809,9 @@ function sgPaintBtns(hostId, v){
     var on = i === v;
     var b = p.firstElementChild;
     p.classList.toggle("on", on);
-    b.style.background  = on ? COLORS[i] : "#f4f6fa";
-    b.style.color       = on ? inkOn(COLORS[i]) : "#5a6270";
-    b.style.borderColor = on ? COLORS[i] : "#e2e6ee";
+    b.style.background  = on ? COLORS[i] : IDLE_BG;
+    b.style.color       = on ? inkOn(COLORS[i]) : IDLE_FG;
+    b.style.borderColor = on ? COLORS[i] : IDLE_BD;
   });
 }
 
@@ -872,6 +1051,21 @@ sgDlBtn.onclick = function(){
   });
 })();
 
+/* ================= 滚动淡入 ================= */
+(function(){
+  var items = document.querySelectorAll("[data-reveal]");
+  if (!("IntersectionObserver" in window)){
+    items.forEach(function(el){ el.classList.add("in-view"); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add("in-view"); io.unobserve(e.target); }
+    });
+  }, { rootMargin:"0px 0px -12% 0px", threshold:.05 });
+  items.forEach(function(el){ io.observe(el); });
+})();
+
 /* ================= 初始化 ================= */
 (function init(){
   var qs = null, raw = "";
@@ -893,6 +1087,12 @@ sgDlBtn.onclick = function(){
   sgApplyUrl();
   sgRender();
   sgFit();
+
+  /* 首屏那张贴纸：拿生成器同一套函数现画一张 IIIA24*，不给仓库加任何位图 */
+  var hero = document.getElementById("heroShot");
+  if (hero && hero.getContext) {
+    drawSticker(hero.getContext("2d"), 2, { z:2, s:4, ai:true, dark:false, url:false });
+  }
 })();
 </script>
 </body>
