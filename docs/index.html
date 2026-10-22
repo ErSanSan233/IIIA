@@ -823,12 +823,10 @@
     height:calc(1.5em + 15px);
     overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   }
-  /* 它就是一行代码，不靠蓝色提示可点——蓝色会跟档位色抢戏，只留 hover 下划线 */
-  .sg-out[href]:hover{ text-decoration:underline; }
-  /* 文字那条不带 href（没地方可跳），别装成链接：去掉下划线与手型光标 */
-  .sg-out:not([href]){ cursor:default; }
-  .sg-out:not([href]):hover{ text-decoration:none; }
-  .sg-out:focus-visible{ outline:2px solid #f5f5f7; outline-offset:3px; }
+  /* 它就是一行预览代码，整条不可点：不给手型光标、不给 hover 下划线、
+     也不进 Tab 焦点序列（没有能触发的动作）。链接只留在复制出去的那段代码里 */
+  .sg-out{ cursor:default; }
+  .sg-out:hover{ text-decoration:none; }
   .sg-out.hid{ display:none; }        /* 贴纸模式没有「复制」这回事 */
 
   /* ===== 页脚 ===== */
@@ -1064,17 +1062,17 @@
           <h3>末尾有没有星号？</h3>
           <p class="q-hint">星号只说明作品的主题，作为修正选项出现。</p>
           <div class="seg q-opts">
-            <button type="button" data-q="star" data-a="yes">有星号</button>
-            <button type="button" data-q="star" data-a="no" class="on">没有星号</button>
+            <button type="button" data-q="star" data-a="yes" class="on">有星号</button>
+            <button type="button" data-q="star" data-a="no">没有星号</button>
           </div>
 
-          <div class="q-ans" data-group="star" data-ans="yes">
+          <div class="q-ans open" data-group="star" data-ans="yes">
             <div class="q-inner">
               <p><b>作品以 AI 为主题</b>，比如一篇 AI 伦理文章、一部 AI 题材短片。</p>
             </div>
           </div>
 
-          <div class="q-ans open" data-group="star" data-ans="no">
+          <div class="q-ans" data-group="star" data-ans="no">
             <div class="q-inner">
               <p><b>作品不以 AI 为主题</b>时，不加任何符号。</p>
             </div>
@@ -1098,8 +1096,8 @@
           <p class="sg-modelab">标注方式</p>
           <div class="sg-seg sg-seg-mode" id="sgModeSeg">
             <label><input type="radio" name="sgmode" value="text"><span>文字</span></label>
-            <label><input type="radio" name="sgmode" value="badge"><span>徽章</span></label>
-            <label><input type="radio" name="sgmode" value="sticker" checked><span>贴纸</span></label>
+            <label><input type="radio" name="sgmode" value="badge" checked><span>徽章</span></label>
+            <label><input type="radio" name="sgmode" value="sticker"><span>贴纸</span></label>
           </div>
         </div>
 
@@ -1176,13 +1174,13 @@
           <div class="sg-block" id="sgUrlBlock">
             <div class="sg-bhead"><span class="sg-step">4</span><span class="sg-bname">说明项</span></div>
             <div class="sg-seg" id="sgUrlSeg">
-              <label><input type="radio" name="sgurl" value="0" checked><span>无</span></label>
-              <label><input type="radio" name="sgurl" value="1"><span>添加网址</span></label>
+              <label><input type="radio" name="sgurl" value="0"><span>无</span></label>
+              <label><input type="radio" name="sgurl" value="1" checked><span>添加网址</span></label>
             </div>
           </div>
-          <!-- 输出条：文字/徽章两种方式的「复制出去是什么」，紧贴按钮上方，锁一行高 -->
-          <a class="sg-out" id="sgOut" href="https://ersansan233.github.io/IIIA/"
-             target="_blank" rel="noopener"></a>
+          <!-- 输出条：文字/徽章两种方式的「复制出去是什么」，紧贴按钮上方，锁一行高。
+               它是纯预览，不是链接——怎么配、格式怎么选都不跳转（用 <p>，天然不可点） -->
+          <p class="sg-out" id="sgOut"></p>
           <div class="sg-foot">
             <select class="sg-mode sg-fmt" id="sgFmt" aria-label="徽章代码格式">
               <option value="md">Markdown</option>
@@ -1234,7 +1232,9 @@ var IDLE_BG = "transparent", IDLE_FG = "rgba(255,255,255,.62)", IDLE_BD = "trans
 
 /* mode: text | badge | sticker；url = 说明项：卡下加网址条，贴纸变 500×450 */
 /* fmt = 徽章代码格式：md(Hugo/GitHub 通用) / html / url(裸网址，粘到支持图片的地方) */
-var SG = { Z:5, S:5, ai:false, url:false, code:"5", mode:"sticker", fmt:"md" };
+/* 默认状态：主旨思路 2 + 实现过程 3（差 1 档，折叠成 IIIA3），非 AI 主题，说明项加网址，方式选徽章。
+   面板控件的 checked 会在下面按这套值同步，改默认值只改这里 */
+var SG = { Z:2, S:3, ai:false, url:true, code:"3", mode:"badge", fmt:"md" };
 
 /* 尺寸常量的唯一来源是 CSS（与 sticker.html 同名变量，改样式即可，不用改 JS） */
 var SG_ROOT = getComputedStyle(document.documentElement);
@@ -1592,16 +1592,13 @@ function sgRenderMode(){
   textCode.textContent = "IIIA" + code;      // 大字只给最终档位，其余都在下面那条输出里
   var note = refNote();
 
-  /* 输出条：贴纸模式复制的是 PNG，没有可展示的文本，整条收起 */
+  /* 输出条：贴纸模式复制的是 PNG，没有可展示的文本，整条收起。
+     其余模式只重打文字——整条是 <p>，不再挂 href，任何配置下都不跳转 */
   if (mode === "sticker"){
     sgTypeStop();
     sgOut.classList.add("hid");
-    sgOut.removeAttribute("href");
   } else {
     sgOut.classList.remove("hid");
-    /* 徽章那条本身就是链接（点了去 IIIA 说明页），文字那条不带 href，不可点 */
-    if (mode === "badge") sgOut.setAttribute("href", REF_HREF);
-    else sgOut.removeAttribute("href");
     sgType(sgOutText());
   }
 
@@ -2132,15 +2129,16 @@ sgDlBtn.onclick = function(){
   function tickStop(){ if (raf){ cancelAnimationFrame(raf); raf = 0; } }
 
   /* —— 展品轮换 ——
-     三屏说的是同一件作品：贴纸、大字、徽章里都取同一个代码。
+     三屏各说各的：贴纸、大字、徽章是三件互不相同的作品，各自翻页时各换各的。
      z / s 一律交给 codeOf() 算，不手写代码，所以不会出现 IIIA12 这种非法组合。
-     每轮转回贴纸那屏之前换一件，抽过的先不放回（一副牌发完再洗）。 */
+     抽过的先不放回（一副牌发完再洗），同一屏不会连着撞上同一件。 */
   var shot    = document.getElementById("heroShot");
   var codeEl  = els[1] ? els[1].querySelector(".hcode") : null;
   var badgeEls = els[2] ? [].slice.call(els[2].querySelectorAll(".hbm i")) : [];
   var ALL = [];
   for (var z = 0; z <= 5; z++) for (var s = 0; s <= 5; s++) ALL.push([z, s, 0], [z, s, 1]);
-  var deck = [], lastCode = "", now = null;
+  var deck = [];
+  var works = els.map(function(){ return null; });   /* 每屏当前那一件，按屏序号存 */
 
   function shuffled(list){
     var a = list.slice();
@@ -2149,12 +2147,17 @@ sgDlBtn.onclick = function(){
     }
     return a;
   }
-  /* 跟上一件同码就塞回牌底再抽，最多试 8 次：单数字的码本来就会由几组 z/s 得到 */
-  function pickWork(){
+  function codeStr(w){ return w ? codeOf(w[0], w[1]) + (w[2] ? "*" : "") : ""; }
+  function drawCard(){
     if (!deck.length) deck = shuffled(ALL);
-    var w = deck.pop(), guard = 0;
-    while (deck.length && codeOf(w[0], w[1]) === lastCode && guard++ < 8){
-      deck.unshift(w); w = deck.pop();
+    return deck.pop();
+  }
+  /* exclude 里的代码一律避开：其他两屏正在显示的，外加本屏刚显示过的那件。
+     撞了就塞回牌底再抽，最多试 8 次（单数字的码本来就会由几组 z/s 得到） */
+  function pickWork(exclude){
+    var w = drawCard(), guard = 0;
+    while (exclude.indexOf(codeStr(w)) >= 0 && guard++ < 8){
+      deck.unshift(w); w = drawCard();
     }
     return w;
   }
@@ -2169,26 +2172,37 @@ sgDlBtn.onclick = function(){
     }
     return list;
   }
-  function paintShot(){
-    if (!now || !shot || !shot.getContext) return;
-    drawSticker(shot.getContext("2d"), 2, { z:now[0], s:now[1], ai:!!now[2], dark:false, url:false });
+  function paintShot(w){
+    if (!w || !shot || !shot.getContext) return;
+    drawSticker(shot.getContext("2d"), 2, { z:w[0], s:w[1], ai:!!w[2], dark:false, url:false });
   }
-  function show(w){
-    now = w;
+  /* 只画第 n 屏（0 贴纸 / 1 大字 / 2 徽章），不动别的屏 */
+  function paint(n, w){
+    if (!w || !els[n]) return;
     var code = codeOf(w[0], w[1]), star = w[2] ? "*" : "";
-    lastCode = code;
+    works[n] = w;
 
-    paintShot();
-    if (shot) shot.setAttribute("aria-label", "IIIA" + code + star + " 贴纸");
-    if (codeEl) codeEl.textContent = "IIIA" + code + star;
-
-    /* 徽章屏第一枚就是这一件，其余七枚换别的代码；底色取两维里较大的那一档 */
-    var list = [w].concat(others(code));
-    badgeEls.forEach(function(el, k){
-      var b = list[k] || [0, 0, 0];
-      el.className = "c" + Math.max(b[0], b[1]);
-      el.textContent = codeOf(b[0], b[1]) + (b[2] ? "*" : "");
-    });
+    if (n === 0){
+      paintShot(w);
+      if (shot) shot.setAttribute("aria-label", "IIIA" + code + star + " 贴纸");
+    } else if (n === 1){
+      if (codeEl) codeEl.textContent = "IIIA" + code + star;
+    } else {
+      /* 徽章屏第一枚就是这一件，其余七枚换别的代码；底色取两维里较大的那一档 */
+      var list = [w].concat(others(code));
+      badgeEls.forEach(function(el, k){
+        var b = list[k] || [0, 0, 0];
+        el.className = "c" + Math.max(b[0], b[1]);
+        el.textContent = codeOf(b[0], b[1]) + (b[2] ? "*" : "");
+      });
+    }
+  }
+  /* 给第 n 屏换一件：三屏同时都在画面里（只是错开一格），
+     所以既要避开另外两屏正在显示的，也要避开它自己刚显示过的那件 */
+  function refresh(n){
+    var ex = [];
+    works.forEach(function(w){ if (w) ex.push(codeStr(w)); });
+    paint(n, pickWork(ex));
   }
 
   els.forEach(function(el, n){ el._n = n; });
@@ -2218,6 +2232,8 @@ sgDlBtn.onclick = function(){
   function step(dir){
     if (busy) return;
     busy = 1;
+    /* 趁目标屏还在画面外，先把它的下一件画好——自动翻页和点圆点都走这里 */
+    refresh(((cur + dir) % N + N) % N);
     cur += dir;
     layout(true);
     sync();
@@ -2230,10 +2246,8 @@ sgDlBtn.onclick = function(){
     timer = setTimeout(loop, ms);
     tickStart();
   }
-  /* 下一次要转回贴纸那屏时，趁它还在画面外先把下一件画好 */
   function loop(){
-    if (((cur + 1) % N + N) % N === 0) show(pickWork());
-    step(1);
+    step(1);          /* 换哪屏就换哪屏的作品，都在 step 里做 */
     run(HOLD);
   }
   function start(fresh){
@@ -2268,8 +2282,11 @@ sgDlBtn.onclick = function(){
 
   layout(false);
   sync();
-  show(pickWork());                                  /* 每次打开页面也换一件 */
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(paintShot);
+  /* 开场三屏各抽一件：后抽的避开先抽的，一次打开就是三件不同的作品 */
+  for (var n0 = 0; n0 < N; n0++) refresh(n0);
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ paintShot(works[0]); });   /* 字体到位后补画贴纸 */
+  }
   start();
 })();
 </script>
