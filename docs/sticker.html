@@ -137,7 +137,7 @@
   }
   .sticker.has-url .urlband{ opacity:1; transition:opacity .18s var(--ease) .2s; }
 
-  /* 柱状区：上下两组关于「人工制作—自动生成」轴镜像
+  /* 柱状区：上下两组关于「人工实现—自动生成」轴镜像
      上下留白取 25，与柱组的左右留白（左 25 / 右 24.4）对齐
      以下数值为 G1 形态的首帧占位，render() 会按 PAD_V 推导后覆盖 */
   .chart{ position:absolute; inset:0; }
@@ -380,7 +380,7 @@
         <path id="starPath" fill="#4d6bfe" d="M 69.329 185.007 L 69.329 175.878 L 63.487 175.878 L 63.487 185.007 L 55.235 181.793 L 53.263 187.417 L 61.734 190.265 L 56.330 197.422 L 61.223 201 L 66.335 193.478 L 71.739 201 L 76.559 197.422 L 71.155 190.265 L 79.773 187.417 L 77.801 181.793 Z"/>
       </svg>
     </div>
-    <div class="lab left">人工制作</div>
+    <div class="lab left">人工实现</div>
     <div class="lab right">自动生成</div>
   </div>
   <div class="urlband" id="urlBand"><span id="urlText">ersansan233.github.io/IIIA</span></div>
@@ -435,8 +435,8 @@
   /* 档位短名：选中时连同「档位 N」一起写在加宽的框里，未选中时靠悬停气泡显示。
      同一位置在两行里含义不同，所以两行各有一套：主旨说的是「是谁在想」，实现说的是「是谁在做」。
      判定细则不放在页面里——面板只负责出标注，细则以 README 判定表为准 */
-  const LABEL_Z = ["无AI参与", "AI提供参考", "AI辅助创作", "人类全审查", "人类有限干预", "全AI"];
-  const LABEL_S = ["全手搓", "AI辅助灵感", "个别AI素材", "人类全审查", "人类有限干预", "全AI"];
+  const LABEL_Z = ["无 AI 参与", "AI 提供参考", "AI 辅助创作", "人类全审查", "人类有限干预", "全 AI"];
+  const LABEL_S = ["全手搓", "AI 辅助灵感", "个别 AI 素材", "人类全审查", "人类有限干预", "全 AI"];
 
   const COLORS = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
   const GAP = 11.24, X0 = 25;                          // 卡片内坐标：首列 x=25，列距 73.64
@@ -693,7 +693,7 @@
 
       const b = document.createElement("button");
       b.type = "button";
-      b.setAttribute("aria-label", "档位" + i + "·" + label);
+      b.setAttribute("aria-label", "档位 " + i + " · " + label);
 
       const k = document.createElement("span");
       k.className = "k";
@@ -857,7 +857,7 @@
     // 轴标签
     ctx.fillStyle = ink; ctx.font = "500 19px " + FONT;
     ctx.textAlign = "left";
-    ctx.fillText("人工制作", 10 + 20, HEAD_H + g.labTop + 11.5);
+    ctx.fillText("人工实现", 10 + 20, HEAD_H + g.labTop + 11.5);
     ctx.textAlign = "right";
     ctx.fillText("自动生成", 10 + 480 - 20, HEAD_H + g.labTop + 11.5);
 

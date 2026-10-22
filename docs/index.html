@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IIIA · 作品 AI 参与度</title>
+<title>IIIA · AI 参与指数</title>
 <style>
   :root{
     /* 页面字体走系统族（苹果观感的来源）；贴纸内部另有指定，别混 */
@@ -86,6 +86,8 @@
   .sec-lede{
     margin:18px 0 0; font-size:19px; line-height:1.55; color:var(--ink-2);
     letter-spacing:0;
+    /* 换行两行时均分，避免末行只剩两三个字；不支持就按普通换行 */
+    text-wrap:balance;
   }
   .sec-dark .sec-lede{ color:#a1a1a6; }
 
@@ -95,6 +97,8 @@
      字身右侧那半格空白会把居中/对齐的行「顶」偏，吃掉半格之后视觉边缘才落到墨迹上。
      只用在确定位于行末的标点上（这些标题都靠 <br> 断行，不会中途换行）。 */
   .tq{ margin-right:-.5em; }
+  /* 不让被包住的短语在中间断行（中文默认任意字间都能断，「数字 / 越大」断开会散） */
+  .nb{ white-space:nowrap; }
 
   .hero{ padding:64px 0 100px; text-align:center; }
   .hero h1{
@@ -116,33 +120,232 @@
   }
   .link:hover::after{ transform:translateX(3px); }
 
-  /* 首屏的贴纸实体：就是本页的「产品图」，由 canvas 现画，不引任何位图 */
-  .hero-shot{
-    display:block; width:min(500px, 86vw); height:auto; margin:0 auto 52px;
-    border-radius:30px;
-    box-shadow:0 30px 60px -30px rgba(0,0,0,.28), 0 8px 20px -12px rgba(0,0,0,.12);
+  /* ===== 首屏陈列：三种标注方式，横向换屏 =====
+     三屏等宽横排，换屏就是整条轨道左右平移——不翻面、也不排 3D 队列。
+     贴纸一屏（canvas 现画、缓慢漂浮）、文字一屏（镂空 + 流动渐变的等宽大字）、
+     徽章一屏（几枚散落，各带固定的角度、缩放和浮动相位）。 */
+  .hshow{
+    --slot-w: min(440px, 82vw);
+    --stage-h: calc(var(--slot-w) * .8 + 26px);
+    position:relative; margin:0 auto 40px; padding-bottom:30px;
+  }
+  /* 只横向裁切、纵向放行：贴纸的投影要落到视口下沿之外一点 */
+  .hviewport{ overflow-x:clip; overflow-y:visible; height:var(--stage-h); }
+  /* 三屏叠在同一个位置上，各自按「离当前屏几格」横移——换屏就是三块同时挪一格。
+     这样没有「第三屏回第一屏要穿过中间那屏」的问题：绕回时最远那屏在屏外
+     从左边瞬移到右边（无过渡），整个过程永远是同一个方向、一格的距离。 */
+  .htrack{ position:relative; height:100%; }
+  .hslide{
+    position:absolute; left:0; top:0; width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .72s cubic-bezier(.32,.06,.16,1);
+    will-change:transform;
+  }
+
+  /* —— 第一屏：贴纸 —— */
+  .hfloat{ width:var(--slot-w); animation:hfloat 9s ease-in-out infinite; }
+  @keyframes hfloat{
+    0%,100%{ translate:0 -7px; rotate:-1.2deg; }
+    50%    { translate:0 7px;  rotate:1.2deg;  }
+  }
+  .hfloat canvas{
+    display:block; width:100%; height:auto; border-radius:30px;
+    box-shadow:0 34px 64px -34px rgba(0,0,0,.32), 0 8px 22px -14px rgba(0,0,0,.14);
+  }
+  /* 地面投影：跟漂浮反着呼吸——物件升高时它更小更淡。
+     用类名而不是 nth-child：三屏会互相换位，位置不再固定 */
+  .hslide-shot::after{
+    content:""; position:absolute; left:50%; bottom:2px;
+    width:calc(var(--slot-w) * .56); height:20px; margin-left:calc(var(--slot-w) * -.28);
+    border-radius:50%; pointer-events:none;
+    background:radial-gradient(closest-side, rgba(0,0,0,.2), rgba(0,0,0,0));
+    animation:hshadow 9s ease-in-out infinite;
+  }
+  @keyframes hshadow{ 0%,100%{ scale:.88; opacity:.5; } 50%{ scale:1; opacity:.95; } }
+
+  /* —— 第二屏：文字 ——
+     苹果那套 glow 之所以不像跑马灯，是因为动的不是「色带的位置」，而是「光本身」。
+     线性渐变平移永远像传送带：边界是直的、速度是匀的、边界在空间上还固定。
+
+     这版把「颜色」和「位置」都做成时间函数：
+     · 四个色标 --h1..--h4 在六档色阶上整体滚动（c0–c3 → c2–c5，4.4s 单程），
+       任一帧相邻色只差一档，插值永远连续、不跨灰点；一个来回就把徽章六色全走一遍。
+     · 渐变角度 76°–146° 摆动（5.4s），色带在字面上斜着扫过去。
+     · 色标位置 26/58 → 42/76 来回滑（3.4s），光的重心在字里走。
+     三个周期互不成整数比，同一帧组合十来分钟才重现一次，看不出是在循环。 */
+  @property --h1{ syntax:'<color>'; inherits:false; initial-value:#d39390; }
+  @property --h2{ syntax:'<color>'; inherits:false; initial-value:#b660a8; }
+  @property --h3{ syntax:'<color>'; inherits:false; initial-value:#b84ccc; }
+  @property --h4{ syntax:'<color>'; inherits:false; initial-value:#8e61e5; }
+  @property --hcAng{ syntax:'<angle>'; inherits:false; initial-value:112deg; }
+  @property --hp2{ syntax:'<percentage>'; inherits:false; initial-value:34%; }
+  @property --hp3{ syntax:'<percentage>'; inherits:false; initial-value:67%; }
+  .hcode{
+    display:block;
+    font-family:var(--mono); font-weight:600; line-height:1; letter-spacing:-.045em;
+    font-size:clamp(72px, 15.4vw, 168px); white-space:nowrap;
+    background-image:linear-gradient(var(--hcAng),
+      var(--h1) 0%, var(--h2) var(--hp2), var(--h3) var(--hp3), var(--h4) 100%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    /* 紫晕让镂空的字有点「透光」；提一点饱和，色阶本身偏灰 */
+    filter:drop-shadow(0 16px 40px rgba(142,97,229,.18)) saturate(1.14) brightness(1.03);
+    animation:hcodeRoll 4.4s ease-in-out infinite alternate,
+              hcodeSlant 5.4s ease-in-out infinite alternate,
+              hcodeSlide 3.4s ease-in-out infinite alternate;
+    /* 负延迟：第一眼落在色相中段，而不是最淡的暖色起点 */
+    animation-delay:-2.1s, -1.4s, -0.9s;
+  }
+  /* 亮带：跟着第二档走的一条柔光。用同色提亮（不是叠白色），所以永远
+     和底色同族、不会变白斑；用 color-mix 现算，滚动换色时自动跟着换。
+     不支持 color-mix 的浏览器落在上面那条无亮带的渐变上，不影响可读性。 */
+  @supports (background: color-mix(in srgb, red 50%, blue)) {
+    .hcode{
+      background-image:linear-gradient(var(--hcAng),
+        var(--h1) 0%,
+        var(--h2) calc(var(--hp2) - 8%),
+        color-mix(in srgb, var(--h2) 72%, #fff) var(--hp2),
+        var(--h2) calc(var(--hp2) + 8%),
+        var(--h3) var(--hp3), var(--h4) 100%);
+    }
+  }
+  /* 四个相邻色整体滚：c0–c3 走到 c2–c5 再折返。
+     折返处速度降到 0，像光的呼吸；一个来回正好扫完徽章六色 */
+  @keyframes hcodeRoll{
+    0%  { --h1:#fbb47e; --h2:#d39390; --h3:#b660a8; --h4:#b84ccc; }
+    100%{ --h1:#b660a8; --h2:#b84ccc; --h3:#8e61e5; --h4:#4d6bfe; }
+  }
+  @keyframes hcodeSlant{ from{ --hcAng:76deg; } to{ --hcAng:146deg; } }
+  @keyframes hcodeSlide{ from{ --hp2:26%; --hp3:58%; } to{ --hp2:42%; --hp3:76%; } }
+
+  /* —— 第三屏：徽章 —— 每枚有自己的位置、角度、缩放和浮动相位 */
+  .hbfield{ position:relative; width:100%; height:100%; --hb:calc(var(--slot-w) * .076); }
+  .hbm{
+    position:absolute; left:var(--x); top:var(--y);
+    translate:-50% -50%;
+    animation:hbm 7.5s ease-in-out infinite;
+    animation-delay:var(--dl,0s);
+  }
+  @keyframes hbm{
+    0%,100%{ translate:-50% -50%; }
+    50%    { translate:-50% calc(-50% - 9px); }
+  }
+  .hbadge{
+    display:inline-flex; overflow:hidden; border-radius:calc(var(--hb) * .26);
+    font-family:var(--mono); font-size:var(--hb); line-height:1; white-space:nowrap;
+    transform:rotate(var(--r,0deg)) scale(var(--s,1));
+    box-shadow:0 16px 30px -20px rgba(0,0,0,.55);
+  }
+  .hbadge b, .hbadge i{ font-weight:500; padding:.42em .58em; }
+  .hbadge b{ background:#555; color:#fff; }
+  .hbadge i{ font-style:normal; color:#fff; }
+  .hbadge i.c0{ background:var(--c0); color:#2a1c10; }
+  .hbadge i.c1{ background:var(--c1); color:#2a1620; }
+  .hbadge i.c2{ background:var(--c2); }
+  .hbadge i.c3{ background:var(--c3); }
+  .hbadge i.c4{ background:var(--c4); }
+  .hbadge i.c5{ background:var(--c5); }
+  /* 八枚的落点：左右都留出余量，窄屏也不至于贴边被裁 */
+  .hbfield .hbm:nth-child(1){ --x:18%; --y:24%; --r:-9deg;  --s:.94; --dl:-1.1s; }
+  .hbfield .hbm:nth-child(2){ --x:49%; --y:12%; --r:6deg;   --s:1.12; --dl:-3.4s; }
+  .hbfield .hbm:nth-child(3){ --x:82%; --y:27%; --r:-5deg;  --s:.82; --dl:-2.2s; }
+  .hbfield .hbm:nth-child(4){ --x:18%; --y:60%; --r:7deg;   --s:1.02; --dl:-5.1s; }
+  .hbfield .hbm:nth-child(5){ --x:44%; --y:47%; --r:-12deg; --s:.88; --dl:-.6s; }
+  .hbfield .hbm:nth-child(6){ --x:79%; --y:62%; --r:4deg;   --s:1.08; --dl:-4.3s; }
+  .hbfield .hbm:nth-child(7){ --x:29%; --y:86%; --r:-6deg;  --s:.78; --dl:-2.8s; }
+  .hbfield .hbm:nth-child(8){ --x:62%; --y:82%; --r:10deg;  --s:.92; --dl:-6s; }
+
+  /* 形态圆点：当前那枚拉长成小药丸，里面那条深色进度条走满就翻页 */
+  .hdots{
+    position:absolute; left:0; right:0; bottom:0;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+  }
+  .hdots button{
+    position:relative; overflow:hidden;
+    border:0; padding:0; cursor:pointer;
+    width:7px; height:7px; border-radius:999px; background:#d2d2d7;
+    transition:width .34s var(--ease), background-color .34s var(--ease);
+  }
+  /* 轨道是浅灰，进度是深灰：宽度一点一点长满，剩多少一眼看出 */
+  .hdots button.on{ width:24px; background:#c7c7cc; }
+  .hdots button i{
+    position:absolute; inset:0; display:block; pointer-events:none;
+    background:#1d1d1f; border-radius:0;   /* 圆角交给外层 overflow:hidden，进度条右缘才是一条直边 */
+    transform-origin:left center; transform:scaleX(0);
+  }
+  .hdots button:hover{ background:#a1a1a6; }
+  .hdots button:focus-visible{ outline:2px solid var(--ui-blue); outline-offset:3px; }
+  /* 不动效模式不自动翻页，进度条就没意义：当前那枚直接是实心药丸 */
+  @media (prefers-reduced-motion: reduce){
+    .hdots button.on{ background:#1d1d1f; }
+    .hdots button i{ display:none; }
   }
 
   /* ===== 标注拆解 ===== */
   .anatomy{ margin:56px auto 0; text-align:center; }
+  /* 与首屏那枚大字同一套字：等宽族、600、-.045em 紧字距 */
   .an-code{
     display:flex; align-items:flex-start; justify-content:center; gap:clamp(14px, 3vw, 30px);
-    font-size:clamp(44px, 9vw, 82px); font-weight:600; line-height:1;
-    letter-spacing:-.03em;
+    font-family:var(--mono); font-weight:600; line-height:1;
+    font-size:clamp(46px, 9.2vw, 86px);
+    letter-spacing:-.045em;
+  }
+  /* 前缀常驻：换例子时它不参与淡入淡出，只是平移到新位置 */
+  .an-pre{
+    color:var(--ink-3); font-weight:600;
+    transition:transform .34s var(--ease);
   }
   .an-part{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+  /* display:flex 会盖掉 [hidden] 的 UA 样式，得自己补一条 */
+  .an-part[hidden]{ display:none; }
   .an-part b{ font-weight:inherit; }   /* b 默认 700，会压过整块定下的 600 */
+  /* 注释走回系统族：等宽中文太方，两句小字反而不好读。
+     两行分工——上行说「第几位」，下行说「讲的是什么」，用深浅分开 */
   .an-part i{
-    font-style:normal; font-size:13px; font-weight:500; letter-spacing:0;
-    color:var(--ink-3); line-height:1.3;
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+    font-family:var(--font); font-style:normal;
+    font-size:13px; font-weight:500; letter-spacing:0; line-height:1.3;
   }
-  .an-pre{ color:var(--ink-3); font-weight:600; }
-  .an-d2{ color:var(--c2); }
-  .an-d4{ color:var(--c4); }
-  .an-star{ color:var(--ink); }
+  .an-part i .an-k{ color:var(--ink-3); font-weight:400; }
+  .an-part i .an-v{ color:var(--ink-2); font-weight:500; }
+  .an-star b{ color:var(--ink); }
+  /* 换例子：只有内容进出用淡入淡出，位移还是「走」过去的 */
+  .an-part, .an-note{
+    transition:opacity .18s var(--ease), transform .18s var(--ease);
+  }
+  .an-stage.out .an-part, .an-stage.out .an-note{ opacity:0; transform:translateY(-8px); }
+  .an-stage.fresh .an-part, .an-stage.fresh .an-note{
+    transition:none; opacity:0; transform:translateY(8px);
+  }
+  /* 每行各自落在中轴上：不追求冒号对齐，一整句居中更松 */
   .an-note{
-    margin:22px auto 0; max-width:30em; font-size:14px; line-height:1.6;
-    color:var(--ink-3); letter-spacing:0;
+    margin:24px auto 0; width:100%; max-width:46em;
+    /* 三行（两位数）时的固定高度：换例子只改写内容，不留高度跳动 */
+    min-height:calc(3 * 1.62em + 12px);
+    display:flex; flex-direction:column; justify-content:center;
+    font-size:15px; line-height:1.62; color:var(--ink-2); letter-spacing:0;
+    text-align:center;
+  }
+  .an-note p{ margin:0; }                 /* UA 的 1em 上下边距会撑高整块 */
+  .an-note p + p{ margin-top:6px; }
+  .an-note b{ font-weight:600; letter-spacing:0; color:var(--ink); }
+  .an-more{ margin-top:28px; display:flex; justify-content:center; }
+  .an-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    height:38px; padding:0 18px; border-radius:980px;
+    border:1px solid var(--hair); background:transparent;
+    font-family:inherit; font-size:14px; font-weight:500; letter-spacing:0;
+    color:var(--ink); cursor:pointer;
+    transition:background-color .2s var(--ease), border-color .2s var(--ease), transform .1s var(--ease);
+  }
+  .an-btn:hover{ background:var(--grey); border-color:#c7c7cc; }
+  .an-btn:active{ transform:scale(.97); }
+  .an-btn:focus-visible{ outline:2px solid var(--ui-blue); outline-offset:3px; }
+  .an-btn svg{
+    width:15px; height:15px; display:block;
+    fill:none; stroke:currentColor; stroke-width:1.6;
+    stroke-linecap:round; stroke-linejoin:round;
+    transition:transform .5s var(--ease);
   }
 
   /* ===== 问卷式解读 ===== */
@@ -204,15 +407,17 @@
   }
   .q-grow{ padding:14px 0; }
   .q-grow + .q-grow{ border-top:1px solid var(--hair); }
-  /* 数字与说明同 line-height，基线才对得齐 */
-  .q-grow .lv-n{ margin-top:0; line-height:1.6; }
+  /* 数字与说明用同一个「行盒高」：行高按正文 16.5px×1.6 算，行盒一样高，
+     两边的半行距之差刚好抵消字号差，基线才落在同一条线上（原先各写 1.5/1.6 会低 2px）。 */
+  .q-grow .lv-n{ margin-top:0; }
   .q-grow p{ margin:0; font-size:16.5px; line-height:1.6; color:var(--ink); letter-spacing:0; }
   .q-tag{ display:none; }
   .q-row{ display:flex; gap:16px; padding:14px 0; border-top:1px solid var(--hair); }
   .q-row:first-of-type{ border-top:0; }
   .lv-n{
-    flex:none; width:22px; margin-top:1px;
-    font-family:var(--mono); font-size:19px; font-weight:600; line-height:1.5;
+    flex:none; width:22px; margin-top:0;
+    font-family:var(--mono); font-size:19px; font-weight:600;
+    line-height:calc(16.5px * 1.6);
     text-align:left;
   }
   .lv-n.lv0{ color:var(--c0); } .lv-n.lv1{ color:var(--c1); } .lv-n.lv2{ color:var(--c2); }
@@ -666,6 +871,7 @@
   @media (prefers-reduced-motion:reduce){
     html{ scroll-behavior:auto; }
     [data-reveal]{ opacity:1; transform:none; }
+    .hfloat, .hslide-shot::after, .hbm, .hcode{ animation:none; }
     *{ transition-duration:.01ms !important; }
   }
 
@@ -674,7 +880,8 @@
     .hero{ padding:60px 0 0; }
     .hero h1{ letter-spacing:-.02em; }
     .cta{ gap:18px; }
-    .hero-shot{ margin:0 auto 40px; }
+    .hshow{ --slot-w:min(300px, 74vw); margin:0 auto 28px; }
+    .hbfield{ --hb:calc(var(--slot-w) * .066); }
     .an-code{ gap:12px; }
     .quiz{ margin-top:52px; }
     .q{ padding:34px 0; }
@@ -714,9 +921,37 @@
   <!-- 首屏 -->
   <section class="hero" id="top">
     <div class="in">
-      <canvas class="hero-shot" id="heroShot" width="1000" height="800" role="img"
-              aria-label="IIIA24* 贴纸示例" data-reveal></canvas>
-      <p class="eyebrow" data-reveal>AI 参与指数</p>
+      <div class="hshow" id="hshow" data-reveal>
+        <div class="hviewport">
+          <div class="htrack" id="htrack">
+            <div class="hslide hslide-shot">
+              <div class="hfloat">
+                <canvas id="heroShot" width="1000" height="800" role="img" aria-label="IIIA24* 贴纸"></canvas>
+              </div>
+            </div>
+            <div class="hslide">
+              <span class="hcode">IIIA24*</span>
+            </div>
+            <div class="hslide">
+              <div class="hbfield">
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c5">05*</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c4">24*</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c3">3</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c0">0</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c2">20</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c5">52</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c1">1*</i></span></span>
+                <span class="hbm"><span class="hbadge"><b>IIIA</b><i class="c4">4</i></span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hdots">
+          <button type="button" class="on" aria-label="显示贴纸"><i aria-hidden="true"></i></button>
+          <button type="button" aria-label="显示文字"><i aria-hidden="true"></i></button>
+          <button type="button" aria-label="显示徽章"><i aria-hidden="true"></i></button>
+        </div>
+      </div>
       <h1 data-reveal>一件作品里<span class="tq">，</span><br>AI 参与了多少<span class="tq">？</span></h1>
       <p class="lede" data-reveal>AI 参与指数（Indice d’implication de l’intelligence artificielle，IIIA）<br>尝试快速量化和展示任何作品中的 AI 参与程度。</p>
       <div class="cta" data-reveal>
@@ -733,23 +968,35 @@
       <div class="sec-head" data-reveal>
         <p class="eyebrow">读懂标注</p>
         <h2>数字讲两件事<span class="tq">，</span><br>星号讲一件事<span class="tq">。</span></h2>
-        <p class="sec-lede">想法与制作各分 0 到 5 档，数字越大，AI 参与越深。回答下面两个问题，就能读懂你看到的任何标注。</p>
+        <p class="sec-lede">从两个维度分别衡量 AI 参与程度：主旨思路、实现过程。<span class="nb">数字越大，</span>AI 参与越多。回答两个问题，就能读懂任何标注。</p>
       </div>
 
       <div class="anatomy" data-reveal>
-        <div class="an-code">
-          <span class="an-pre">IIIA</span>
-          <span class="an-part an-d2"><b>2</b><i>第一位<br>想法</i></span>
-          <span class="an-part an-d4"><b>4</b><i>第二位<br>制作</i></span>
-          <span class="an-part an-star"><b>*</b><i>星号<br>AI 主题</i></span>
+        <div class="an-stage" id="anStage" aria-live="polite">
+          <div class="an-code">
+            <span class="an-pre">IIIA</span>
+            <span class="an-part"><b id="anD1">2</b><i id="anL1"><span class="an-k">第一维度</span><span class="an-v">主旨思路</span></i></span>
+            <span class="an-part" id="anP2"><b id="anD2">4</b><i><span class="an-k">第二维度</span><span class="an-v">实现过程</span></i></span>
+            <span class="an-part an-star" id="anP3"><b>*</b><i><span class="an-k">星号</span><span class="an-v">AI 主题</span></i></span>
+          </div>
+          <div class="an-note" id="anNote">
+            <p><b style="color:var(--c2)">2</b><span>：作品的主旨思路由人主导、AI 辅助；</span></p>
+            <p><b style="color:var(--c4)">4</b><span>：作品的实现过程大部分交给 AI；</span></p>
+            <p><b>星号</b><span>：作品本身在讲 AI 主题。</span></p>
+          </div>
         </div>
-        <p class="an-note">以 <code>IIIA24*</code> 为例：想法由人主导、AI 辅助（2），制作大部分交给 AI（4），作品本身在讲 AI（*）。</p>
+        <div class="an-more">
+          <button type="button" class="an-btn" id="anNext">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M12.85 6.79A5 5 0 1 1 8 3"/><path d="M7.3 4.9L10.7 3L7.3 1.1Z" fill="currentColor" stroke="none"/></svg>
+            换个例子
+          </button>
+        </div>
       </div>
 
       <div class="quiz">
         <div class="q" data-reveal>
           <h3>你看到的数字是几位？</h3>
-          <p class="q-hint">想法与制作的 AI 参与程度接近时合并成一位，相差较大时两位都写出来。</p>
+          <p class="q-hint">IIIA 可能以一位或两位数字表示。</p>
           <div class="seg q-opts">
             <button type="button" data-q="digits" data-a="one" class="on">一位数字</button>
             <button type="button" data-q="digits" data-a="two">两位数字</button>
@@ -757,8 +1004,8 @@
 
           <div class="q-ans open" data-group="digits" data-ans="one">
             <div class="q-inner">
-              <p>想法和制作的 AI 参与程度差不多（相差不超过 1 档），合并成一个数字，读整体参与程度：</p>
-              <div class="q-row"><span class="lv-n lv0">0</span><p><b>全程人工</b><span class="q-def">想法与制作都不用 AI。</span></p></div>
+              <p>两个维度相差不超过 1 时只写一位，取其中的较大值，整体表示 AI 的参与程度：</p>
+              <div class="q-row"><span class="lv-n lv0">0</span><p><b>全程人工</b><span class="q-def">主旨思路与实现过程都不用 AI。</span></p></div>
               <div class="q-row"><span class="lv-n lv1">1</span><p><b>AI 只当参考</b><span class="q-def">出主意、找灵感，不直接产出内容。</span></p></div>
               <div class="q-row"><span class="lv-n lv2">2</span><p><b>AI 打下手</b><span class="q-def">做语法检查、简单润色这类基础辅助。</span></p></div>
               <div class="q-row"><span class="lv-n lv3">3</span><p><b>AI 干重活，人把关</b><span class="q-def">AI 完成大量内容，人工深度修改、审核并定稿。</span></p></div>
@@ -769,7 +1016,7 @@
 
           <div class="q-ans" data-group="digits" data-ans="two">
             <div class="q-inner">
-              <p>想法和制作差得远（相差 2 档及以上），两个数字都写出来：<b>第一位是想法，第二位是制作</b>。</p>
+              <p>两个维度相差 2 及以上时，按主旨思路、实现过程的顺序分别写出。</p>
               <div class="q-cols">
                 <div class="q-ghead">
                   <span></span>
@@ -778,18 +1025,18 @@
                 </div>
                 <div class="q-grow">
                   <span class="lv-n lv0">0</span>
-                  <p><span class="q-tag">主旨思路</span>想法全由人构思，AI 未参与。</p>
+                  <p><span class="q-tag">主旨思路</span>立意、观点全由人构思，AI 未参与。</p>
                   <p><span class="q-tag">实现过程</span>素材、剪辑、后期全部人工。</p>
                 </div>
                 <div class="q-grow">
                   <span class="lv-n lv1">1</span>
-                  <p><span class="q-tag">主旨思路</span>人想，AI 只启发灵感、提供参考（如头脑风暴、热点分析）。</p>
-                  <p><span class="q-tag">实现过程</span>人做，AI 只推荐素材（如图片、音乐片段）。</p>
+                  <p><span class="q-tag">主旨思路</span>由人构思，AI 只启发灵感、提供参考<span class="nb">（如头脑风暴、热点分析）</span>。</p>
+                  <p><span class="q-tag">实现过程</span>由人完成，AI 只推荐素材<span class="nb">（如图片、音乐片段）</span>。</p>
                 </div>
                 <div class="q-grow">
                   <span class="lv-n lv2">2</span>
-                  <p><span class="q-tag">主旨思路</span>人为主，AI 做基础辅助（如语法检查、润色提示）。</p>
-                  <p><span class="q-tag">实现过程</span>人为主，AI 生成少量素材（如背景图、虚拟场景）。</p>
+                  <p><span class="q-tag">主旨思路</span>以人为主，AI 做基础辅助<span class="nb">（如语法检查、润色提示）</span>。</p>
+                  <p><span class="q-tag">实现过程</span>以人为主，AI 生成少量素材<span class="nb">（如背景图、虚拟场景）</span>。</p>
                 </div>
                 <div class="q-grow">
                   <span class="lv-n lv3">3</span>
@@ -803,7 +1050,7 @@
                 </div>
                 <div class="q-grow">
                   <span class="lv-n lv5">5</span>
-                  <p><span class="q-tag">主旨思路</span>AI 独立产出全部想法，无人干预。</p>
+                  <p><span class="q-tag">主旨思路</span>AI 独立产出全部内容，无人干预。</p>
                   <p><span class="q-tag">实现过程</span>AI 全流程生成与合成，人只上传、发布。</p>
                 </div>
               </div>
@@ -813,7 +1060,7 @@
 
         <div class="q no-rule" data-reveal>
           <h3>末尾有没有星号？</h3>
-          <p class="q-hint">星号只说明作品的主题，与数字大小、制作方式都无关。</p>
+          <p class="q-hint">星号只说明作品的主题，作为修正选项出现。</p>
           <div class="seg q-opts">
             <button type="button" data-q="star" data-a="yes">有星号</button>
             <button type="button" data-q="star" data-a="no" class="on">没有星号</button>
@@ -821,13 +1068,13 @@
 
           <div class="q-ans" data-group="star" data-ans="yes">
             <div class="q-inner">
-              <p><b>作品本身在讲 AI</b>——比如一篇 AI 伦理文章、一部 AI 题材短片。星号只说明主题，跟数字大小、制作方式都无关。</p>
+              <p><b>作品以 AI 为主题</b>，比如一篇 AI 伦理文章、一部 AI 题材短片。</p>
             </div>
           </div>
 
           <div class="q-ans open" data-group="star" data-ans="no">
             <div class="q-inner">
-              <p><b>作品不以 AI 为主题</b>，不加任何符号。</p>
+              <p><b>作品不以 AI 为主题</b>时，不加任何符号。</p>
             </div>
           </div>
         </div>
@@ -899,7 +1146,7 @@
                 <path id="sgStarPath" fill="#4d6bfe" d="M 69.329 185.007 L 69.329 175.878 L 63.487 175.878 L 63.487 185.007 L 55.235 181.793 L 53.263 187.417 L 61.734 190.265 L 56.330 197.422 L 61.223 201 L 66.335 193.478 L 71.739 201 L 76.559 197.422 L 71.155 190.265 L 79.773 187.417 L 77.801 181.793 Z"/>
               </svg>
             </div>
-            <div class="sg-lab sg-lleft">人工制作</div>
+            <div class="sg-lab sg-lleft">人工实现</div>
             <div class="sg-lab sg-lright">自动生成</div>
           </div>
               <div class="sg-urlband" id="sgUrlBand"><span id="sgUrlText">ersansan233.github.io/IIIA</span></div>
@@ -954,7 +1201,7 @@
       <div class="sec-head" data-reveal>
         <p class="eyebrow">开源与许可</p>
         <h2>一份建议<span class="tq">，</span><br>不设门槛<span class="tq">。</span></h2>
-        <p class="sec-lede">IIIA 只是一份建议，没有认证机构，也不做审查——用不用、怎么用，由创作者自己决定。规范全文、档位表和版本记录都放在 GitHub 仓库里，遵循 MIT 许可，可自由使用、修改和分发。</p>
+        <p class="sec-lede">IIIA 只是一份建议，没有认证机构，也不做审查。用不用、怎么用，由创作者决定。规范全文、档位表和版本记录都放在 GitHub 仓库里，遵循 MIT 许可，可自由使用、修改和分发。</p>
       </div>
       <div class="open-cta" data-reveal>
         <a class="btn" href="https://github.com/ErSanSan233/IIIA" target="_blank" rel="noopener"><svg class="gh-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>前往 GitHub 仓库</a>
@@ -1367,7 +1614,7 @@ function sgRenderMode(){
         c.code.textContent = cc;
         c.code.style.background = COLORS[Math.max(z, s)];
         c.el.classList.toggle("on", si === onSlide && z === SG.Z && s === SG.S);
-        c.el.setAttribute("aria-label", "想法 " + z + " 制作 " + s + "，IIIA" + cc);
+        c.el.setAttribute("aria-label", "主旨思路 " + z + "，实现过程 " + s + "，IIIA" + cc);
       }
     }
   }
@@ -1583,7 +1830,7 @@ function drawSticker(ctx, scale, opts){
 
   ctx.fillStyle = ink; ctx.font = "500 19px " + SG_FONT;
   ctx.textAlign = "left";
-  ctx.fillText("人工制作", 10 + 20, HEAD_H + g.labTop + 11.5);
+  ctx.fillText("人工实现", 10 + 20, HEAD_H + g.labTop + 11.5);
   ctx.textAlign = "right";
   ctx.fillText("自动生成", 10 + 480 - 20, HEAD_H + g.labTop + 11.5);
 
@@ -1705,12 +1952,323 @@ sgDlBtn.onclick = function(){
   sgRender();
   sgFit();
   badgeLayout();
+})();
 
-  /* 首屏那张贴纸：拿生成器同一套函数现画一张 IIIA24*，不给仓库加任何位图 */
-  var hero = document.getElementById("heroShot");
-  if (hero && hero.getContext) {
-    drawSticker(hero.getContext("2d"), 2, { z:2, s:4, ai:true, dark:false, url:false });
+/* ================= 读懂标注：示例轮换 ================= */
+(function(){
+  var stage = document.getElementById("anStage");
+  if (!stage) return;
+
+  var COL = ["#fbb47e","#d39390","#b660a8","#b84ccc","#8e61e5","#4d6bfe"];
+  /* 两个维度各自的说法，措辞对齐标准里的档名 */
+  var Z = [
+    "作品的主旨思路完全由人提出，没有用 AI",
+    "作品的主旨思路由人提出，AI 只提供过参考",
+    "作品的主旨思路由人主导、AI 辅助",
+    "作品的主旨思路由 AI 生成，人逐条审查后定下",
+    "作品的主旨思路大部分由 AI 提出，人只做取舍",
+    "作品的主旨思路完全由 AI 提出"
+  ];
+  var S = [
+    "作品的实现过程全程手工，没有用 AI",
+    "作品的实现过程以手工为主，AI 偶尔提供灵感",
+    "作品的实现过程只有个别素材交给 AI",
+    "作品的实现过程大量借助 AI，人逐处审查修改",
+    "作品的实现过程大部分交给 AI",
+    "作品的实现过程全程由 AI 完成"
+  ];
+  /* 合并成一位数时读的是「那一档」：档名 + 一句解释 */
+  var ONE = [
+    ["全程人工", "主旨思路与实现过程都不用 AI"],
+    ["AI 只当参考", "出主意、找灵感，不直接产出内容"],
+    ["AI 打下手", "做语法检查、简单润色这类基础辅助"],
+    ["AI 干重活，人把关", "AI 完成大量内容，人工深度修改、审核并定稿"],
+    ["AI 主导，人打下手", "AI 跑通全流程，人工只做有限润色或局部调整"],
+    ["全程 AI", "AI 独立完成，人最多上传、发布"]
+  ];
+  /* 例子库：z 主旨思路 / s 实现过程 / ai 是否 AI 主题。
+     单双位与星号不手写，一律由规则算，避免出现 IIIA12 这种非法代码 */
+  var CASES = [
+    [2,4,1], [3,5,1], [1,4,0], [5,1,0], [4,2,0],
+    [1,1,1], [2,5,0], [0,0,0], [5,3,1], [3,3,0]
+  ];
+
+  var d1 = document.getElementById("anD1"), l1 = document.getElementById("anL1");
+  var d2 = document.getElementById("anD2"), p2 = document.getElementById("anP2");
+  var p3 = document.getElementById("anP3"), note = document.getElementById("anNote");
+  var btn = document.getElementById("anNext");
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var OUT = 190;                /* 跟 CSS 的 .18s 对齐 */
+  var i = 0, busy = 0, deg = 0;
+
+  /* 大字下面那两行小字：上行「第几位」，下行「讲的是什么」 */
+  function part(k, v){
+    return '<span class="an-k">' + k + '</span><span class="an-v">' + v + '</span>';
   }
+
+  function paint(k){
+    var c = CASES[k], z = c[0], s = c[1], ai = c[2];
+    var one = Math.abs(z - s) <= 1;
+    var m = Math.max(z, s);
+    var rows = [];
+
+    if (one){
+      d1.textContent = m;
+      d1.style.color = COL[m];
+      l1.innerHTML = part("一位数字", "整体概括");
+      p2.hidden = true;
+      /* 一位数只报「那一档」，合并规则不在这行解释 */
+      rows.push([String(m), COL[m],
+        ONE[m][0] + "（" + ONE[m][1] + "）；"]);
+    } else {
+      d1.textContent = z;
+      d1.style.color = COL[z];
+      l1.innerHTML = part("第一维度", "主旨思路");
+      d2.textContent = s;
+      d2.style.color = COL[s];
+      p2.hidden = false;
+      rows.push([String(z), COL[z], Z[z] + "；"]);
+      rows.push([String(s), COL[s], S[s] + "；"]);
+    }
+    p3.hidden = !ai;
+    rows.push(ai
+      ? ["星号",   "", "作品本身在讲 AI 主题。"]
+      : ["不带星号", "", "作品本身不讲 AI 主题。"]);
+
+    note.innerHTML = rows.map(function(r){
+      var color = r[1] ? ' style="color:' + r[1] + '"' : "";
+      return "<p><b" + color + ">" + r[0] + "</b><span>：" + r[2] + "</span></p>";
+    }).join("");
+  }
+
+  btn.addEventListener("click", function(){
+    if (busy) return;
+    /* 图标每点一次转半圈，跟着内容一起走，不额外抢注意力 */
+    deg += 180;
+    var icon = btn.querySelector("svg");
+    if (icon) icon.style.transform = "rotate(" + deg + "deg)";
+
+    /* 关了动效就直接换，不留中间的空帧 */
+    if (reduce){
+      i = (i + 1) % CASES.length;
+      paint(i);
+      return;
+    }
+
+    busy = 1;
+    stage.classList.add("out");
+    setTimeout(function(){
+      /* 先量旧位置：此时数字还在（只是透明），布局仍是旧的 */
+      var pre = stage.querySelector(".an-pre");
+      var before = pre.getBoundingClientRect().left;
+
+      i = (i + 1) % CASES.length;
+      paint(i);
+      stage.classList.remove("out");
+      stage.classList.add("fresh");
+      /* 先让「落在下方、还是透明的」这一步落地，再放开过渡淡入 */
+      void stage.querySelector(".an-part").offsetWidth;
+      void stage.querySelector(".an-note").offsetWidth;
+      stage.classList.remove("fresh");
+
+      /* 位数变了整块重心跟着变。前缀「IIIA」不淡出，直接平移到新位置：
+         先把它抵回旧位置（关掉过渡），下一拍再放开，看起来就是「挪过去」 */
+      var dx = Math.round(before - pre.getBoundingClientRect().left);
+      if (dx){
+        pre.style.transition = "none";
+        pre.style.transform = "translateX(" + dx + "px)";
+        void pre.offsetWidth;
+        setTimeout(function(){
+          pre.style.transition = "";
+          pre.style.transform = "";
+        }, 0);
+      }
+
+      setTimeout(function(){ busy = 0; }, 240);
+    }, OUT);
+  });
+
+  paint(0);
+})();
+
+/* ================= 首屏陈列：三屏左右换屏 ================= */
+(function(){
+  var stage = document.getElementById("hshow");
+  if (!stage) return;
+  var track = document.getElementById("htrack");
+  var els   = [].slice.call(track.children);
+  var dots  = [].slice.call(stage.querySelectorAll(".hdots button"));
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var N = els.length;
+  var cur = 0, timer = 0, busy = 0;
+  var HOLD = 10800;  /* 停在这一屏的时间：三屏一轮 34s，够看清楚再走 */
+  var MOVE = 720;    /* 平移时长，跟 CSS 的 .72s 对齐 */
+
+  /* 圆点里的进度条：和换屏共用同一个截止时间，所以「走满」与「翻页」是同一刻。
+     悬停 / 切到后台时计时停住，进度条也停在原处，回来接着走。 */
+  var fills  = dots.map(function(d){ return d.querySelector("i"); });
+  var remain = HOLD, deadline = 0, raf = 0;
+
+  function nowMs(){
+    return (window.performance && performance.now) ? performance.now() : Date.now();
+  }
+  function paintFill(){
+    var a = ((cur % N) + N) % N;
+    var p = 1 - Math.min(1, Math.max(0, remain / HOLD));
+    fills.forEach(function(f, n){
+      if (f) f.style.transform = "scaleX(" + (n === a ? p.toFixed(4) : 0) + ")";
+    });
+  }
+  function tick(){
+    raf = 0;
+    if (!timer) return;
+    remain = Math.max(0, deadline - nowMs());
+    paintFill();
+    raf = requestAnimationFrame(tick);
+  }
+  function tickStart(){ if (!raf && !reduce) raf = requestAnimationFrame(tick); }
+  function tickStop(){ if (raf){ cancelAnimationFrame(raf); raf = 0; } }
+
+  /* —— 展品轮换 ——
+     三屏说的是同一件作品：贴纸、大字、徽章里都取同一个代码。
+     z / s 一律交给 codeOf() 算，不手写代码，所以不会出现 IIIA12 这种非法组合。
+     每轮转回贴纸那屏之前换一件，抽过的先不放回（一副牌发完再洗）。 */
+  var shot    = document.getElementById("heroShot");
+  var codeEl  = els[1] ? els[1].querySelector(".hcode") : null;
+  var badgeEls = els[2] ? [].slice.call(els[2].querySelectorAll(".hbm i")) : [];
+  var ALL = [];
+  for (var z = 0; z <= 5; z++) for (var s = 0; s <= 5; s++) ALL.push([z, s, 0], [z, s, 1]);
+  var deck = [], lastCode = "", now = null;
+
+  function shuffled(list){
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = (Math.random() * (i + 1)) | 0, t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  /* 跟上一件同码就塞回牌底再抽，最多试 8 次：单数字的码本来就会由几组 z/s 得到 */
+  function pickWork(){
+    if (!deck.length) deck = shuffled(ALL);
+    var w = deck.pop(), guard = 0;
+    while (deck.length && codeOf(w[0], w[1]) === lastCode && guard++ < 8){
+      deck.unshift(w); w = deck.pop();
+    }
+    return w;
+  }
+  /* 徽章屏其余七枚：代码互不相同，也不跟当前这件重复 */
+  function others(code){
+    var seen = {}, list = [], guard = 0;
+    seen[code] = 1;
+    while (list.length < badgeEls.length && guard++ < 400){
+      var w = ALL[(Math.random() * ALL.length) | 0], c = codeOf(w[0], w[1]);
+      if (seen[c]) continue;
+      seen[c] = 1; list.push(w);
+    }
+    return list;
+  }
+  function paintShot(){
+    if (!now || !shot || !shot.getContext) return;
+    drawSticker(shot.getContext("2d"), 2, { z:now[0], s:now[1], ai:!!now[2], dark:false, url:false });
+  }
+  function show(w){
+    now = w;
+    var code = codeOf(w[0], w[1]), star = w[2] ? "*" : "";
+    lastCode = code;
+
+    paintShot();
+    if (shot) shot.setAttribute("aria-label", "IIIA" + code + star + " 贴纸");
+    if (codeEl) codeEl.textContent = "IIIA" + code + star;
+
+    /* 徽章屏第一枚就是这一件，其余七枚换别的代码；底色取两维里较大的那一档 */
+    var list = [w].concat(others(code));
+    badgeEls.forEach(function(el, k){
+      var b = list[k] || [0, 0, 0];
+      el.className = "c" + Math.max(b[0], b[1]);
+      el.textContent = codeOf(b[0], b[1]) + (b[2] ? "*" : "");
+    });
+  }
+
+  els.forEach(function(el, n){ el._n = n; });
+
+  /* 每屏的位移只取「离当前屏几格」：0 / +1 / -1（-1 其实是环上的下一格）。
+     换屏时三块同时挪一格，谁也不需要穿过中间那屏。 */
+  function layout(animate){
+    els.forEach(function(el){
+      var off = ((el._n - cur) % N + N) % N;   /* 0 / 1 / 2 */
+      if (off > N / 2) off -= N;               /* 2 → -1，接到环的另一侧 */
+      var jump = el._off !== undefined && Math.abs(off - el._off) > 1;
+      if (!animate || jump) el.style.transition = "none";   /* 屏外瞬移，看不见 */
+      el.style.transform = "translateX(" + (off * 100) + "%)";
+      if (!animate || jump){
+        void el.offsetWidth;                   /* 先把「不带动画」落地 */
+        el.style.transition = "";
+      }
+      el._off = off;
+    });
+  }
+  function sync(){
+    var a = ((cur % N) + N) % N;
+    dots.forEach(function(d, n){ d.classList.toggle("on", n === a); });
+    els.forEach(function(el){ el.setAttribute("aria-hidden", el._n === a ? "false" : "true"); });
+    paintFill();
+  }
+  function step(dir){
+    if (busy) return;
+    busy = 1;
+    cur += dir;
+    layout(true);
+    sync();
+    setTimeout(function(){ busy = 0; }, MOVE + 40);
+  }
+  /* 一次停留 = 一个截止时间 + 一个 setTimeout，进度条读的就是这个截止时间 */
+  function run(ms){
+    remain = ms;
+    deadline = nowMs() + ms;
+    timer = setTimeout(loop, ms);
+    tickStart();
+  }
+  /* 下一次要转回贴纸那屏时，趁它还在画面外先把下一件画好 */
+  function loop(){
+    if (((cur + 1) % N + N) % N === 0) show(pickWork());
+    step(1);
+    run(HOLD);
+  }
+  function start(fresh){
+    if (reduce || timer) return;
+    /* 只有明确传 true（手点圆点）才重头计时；鼠标移开、切回前台都接着剩下的走 */
+    run(fresh === true || remain <= 0 ? HOLD : remain);
+  }
+  function stop(){
+    if (!timer) return;
+    clearTimeout(timer);
+    timer = 0;
+    remain = Math.max(0, deadline - nowMs());   /* 停住时把剩下的时间存下来 */
+    tickStop();
+    paintFill();
+  }
+
+  dots.forEach(function(d, k){
+    d.addEventListener("click", function(){
+      var a = ((cur % N) + N) % N;
+      if (busy || k === a) return;
+      stop();
+      /* 只有三屏，对面那侧永远只差一格：走短的那边，也是同一个方向 */
+      step((k - a + N) % N === 1 ? 1 : -1);
+      start(true);          /* 手点过去就重新计时，不接着上一屏剩下的 */
+    });
+  });
+  stage.addEventListener("mouseenter", stop);          /* 指着看的时候不换屏 */
+  stage.addEventListener("mouseleave", function(){ start(); });   /* 别把事件对象当 fresh */
+  document.addEventListener("visibilitychange", function(){
+    if (document.hidden) stop(); else start();         /* 切到后台别空转 */
+  });
+
+  layout(false);
+  sync();
+  show(pickWork());                                  /* 每次打开页面也换一件 */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(paintShot);
+  start();
 })();
 </script>
 </body>
